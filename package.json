@@ -1,0 +1,33 @@
+{
+  "name": "projectforge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-Powered Project Management Platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "turbo format",
+    "clean": "turbo clean && rm -rf node_modules",
+    "db:migrate": "pnpm --filter core-service db:migrate",
+    "db:seed": "pnpm --filter core-service db:seed",
+    "db:reset": "pnpm --filter core-service db:reset",
+    "generate:types": "pnpm --filter shared-types generate",
+    "generate:api": "pnpm --filter shared-types generate:api"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.2.5",
+    "@turbo/gen": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

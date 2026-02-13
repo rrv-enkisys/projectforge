@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: projectforge-postgres
+    environment:
+      POSTGRES_DB: projectforge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - projectforge
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: projectforge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - projectforge
+
+  # API Gateway (Go)
+  api-gateway:
+    build:
+      context: ./apps/api-gateway
+      dockerfile: Dockerfile
+    container_name: projectforge-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      CORE_SERVICE_URL: http://core-service:8081
+      AI_SERVICE_URL: http://ai-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    depends_on:
+      - core-service
+      - ai-service
+      - notification-service
+    restart: unless-stopped
+    networks:
+      - projectforge
+
+  # Core Service (Python/FastAPI)
+  core-service:
+    build:
+      context: ./apps/core-service
+      dockerfile: Dockerfile
+    container_name: projectforge-core-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/projectforge
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - projectforge
+
+  # AI Service (Python/FastAPI)
+  ai-service:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile
+    container_name: projectforge-ai-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/projectforge
+      VERTEX_AI_PROJECT: ${VERTEX_AI_PROJECT}
+      VERTEX_AI_LOCATION: us-central1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - projectforge
+
+  # Notification Service (Go)
+  notification-service:
+    build:
+      context: ./apps/notification-service
+      dockerfile: Dockerfile
+    container_name: projectforge-notification-service
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      TEAMS_APP_ID: ${TEAMS_APP_ID}
+    restart: unless-stopped
+    networks:
+      - projectforge
+
+  # Web Frontend (React/Vite)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: projectforge-web
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_URL: http://localhost:8080
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+    networks:
+      - projectforge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  projectforge:
+    driver: bridge
