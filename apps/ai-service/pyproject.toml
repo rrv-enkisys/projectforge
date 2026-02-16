@@ -1,32 +1,32 @@
 [tool.poetry]
 name = "ai-service"
 version = "0.1.0"
-description = "ProjectForge AI Service"
+description = "ProjectForge AI Service - RAG, Embeddings, Chat, and AI Copilot"
 authors = ["Ricardo Reyes <ricardo@enkisys.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.109.0"
+fastapi = "^0.110.0"
 uvicorn = {extras = ["standard"], version = "^0.27.0"}
-sqlalchemy = "^2.0.25"
+sqlalchemy = "^2.0.27"
 asyncpg = "^0.29.0"
-pydantic = "^2.6.0"
+pydantic = "^2.6.1"
 pydantic-settings = "^2.1.0"
 google-cloud-aiplatform = "^1.42.0"
 google-cloud-documentai = "^2.23.0"
 google-cloud-storage = "^2.14.0"
 pgvector = "^0.2.4"
-langchain = "^0.1.0"
-tiktoken = "^0.5.2"
+tiktoken = "^0.6.0"
+httpx = "^0.26.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
-pytest-asyncio = "^0.23.0"
+pytest-asyncio = "^0.23.3"
 pytest-cov = "^4.1.0"
-black = "^24.1.0"
-isort = "^5.13.0"
+black = "^24.2.0"
+isort = "^5.13.2"
 mypy = "^1.8.0"
-ruff = "^0.2.0"
+ruff = "^0.2.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -43,6 +43,9 @@ line_length = 100
 [tool.mypy]
 python_version = "3.12"
 strict = true
+warn_return_any = true
+warn_unused_configs = true
+plugins = ["pydantic.mypy"]
 
 [tool.ruff]
 line-length = 100
