@@ -45,16 +45,20 @@ app = FastAPI(
     description="AI service for RAG, embeddings, chat, and project copilot features",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url=f"{settings.api_prefix}/docs" if settings.debug else None,
+    redoc_url=f"{settings.api_prefix}/redoc" if settings.debug else None,
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS middleware - DISABLED
+# CORS is handled by the API Gateway, not by individual services
+# Uncomment only if running AI Service standalone (without API Gateway)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=settings.cors_origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 # Exception handlers

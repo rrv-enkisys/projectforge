@@ -63,15 +63,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+# CORS middleware - DISABLED
+# CORS is handled by the API Gateway, not by individual services
+# Uncomment only if running Core Service standalone (without API Gateway)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=settings.cors_origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+#     expose_headers=["*"],
+# )
 
 # Exception handlers
 app.add_exception_handler(NotFoundError, not_found_error_handler)  # type: ignore
