@@ -80,16 +80,30 @@ func main() {
 		// Rate limiting middleware
 		r.Use(middleware.RateLimit(rateLimiter))
 
-		// Core Service routes
+		// Core Service routes - match any method and path
+		r.HandleFunc("/organizations", proxyHandler.ProxyToCore())
 		r.HandleFunc("/organizations/*", proxyHandler.ProxyToCore())
+
+		r.HandleFunc("/clients", proxyHandler.ProxyToCore())
 		r.HandleFunc("/clients/*", proxyHandler.ProxyToCore())
+
+		r.HandleFunc("/projects", proxyHandler.ProxyToCore())
 		r.HandleFunc("/projects/*", proxyHandler.ProxyToCore())
+
+		r.HandleFunc("/tasks", proxyHandler.ProxyToCore())
 		r.HandleFunc("/tasks/*", proxyHandler.ProxyToCore())
+
+		r.HandleFunc("/milestones", proxyHandler.ProxyToCore())
 		r.HandleFunc("/milestones/*", proxyHandler.ProxyToCore())
+
+		r.HandleFunc("/users", proxyHandler.ProxyToCore())
 		r.HandleFunc("/users/*", proxyHandler.ProxyToCore())
 
 		// AI Service routes
+		r.HandleFunc("/documents", proxyHandler.ProxyToAI())
 		r.HandleFunc("/documents/*", proxyHandler.ProxyToAI())
+
+		r.HandleFunc("/chat", proxyHandler.ProxyToAI())
 		r.HandleFunc("/chat/*", proxyHandler.ProxyToAI())
 	})
 

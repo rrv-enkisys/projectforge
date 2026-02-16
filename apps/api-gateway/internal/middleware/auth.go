@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/projectforge/api-gateway/internal/firebase"
@@ -23,8 +25,27 @@ const (
 
 // Auth creates an authentication middleware
 func Auth(firebaseClient *firebase.Client) func(http.Handler) http.Handler {
+	// Check if running in development mode
+	isDevelopment := os.Getenv("ENVIRONMENT") == "development"
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// DEVELOPMENT MODE: Bypass authentication
+			if isDevelopment {
+				slog.Debug("Auth bypass in development mode")
+				// Set dummy user context for development
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, UserUIDKey, "dev-user-uid")
+				ctx = context.WithValue(ctx, UserEmailKey, "dev@projectforge.local")
+				ctx = context.WithValue(ctx, UserClaimsKey, map[string]interface{}{
+					"email": "dev@projectforge.local",
+					"org_id": "dev-org-id",
+				})
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			// PRODUCTION MODE: Full authentication
 			// Extract Bearer token from Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
