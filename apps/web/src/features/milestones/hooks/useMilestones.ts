@@ -8,7 +8,7 @@ export interface Milestone {
   project_id: string
   target_date: string | null
   completed_date: string | null
-  status: 'not_started' | 'in_progress' | 'completed'
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived'
   organization_id: string
   created_at: string
   updated_at: string
@@ -19,7 +19,7 @@ export interface MilestoneCreateInput {
   description?: string
   project_id: string
   target_date?: string
-  status?: 'not_started' | 'in_progress' | 'completed'
+  status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived'
 }
 
 export interface MilestoneUpdateInput {
@@ -27,7 +27,7 @@ export interface MilestoneUpdateInput {
   description?: string
   project_id?: string
   target_date?: string
-  status?: 'not_started' | 'in_progress' | 'completed'
+  status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived'
   completed_date?: string
 }
 

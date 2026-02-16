@@ -14,15 +14,19 @@ import { MilestoneFormDialog } from '@/features/milestones/components/MilestoneF
 import { useMilestones, useDeleteMilestone, type Milestone } from '@/features/milestones/hooks/useMilestones'
 
 const statusColors = {
-  not_started: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
-  in_progress: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+  planning: 'bg-gray-100 text-gray-800 hover:bg-gray-200',
+  active: 'bg-blue-100 text-blue-800 hover:bg-blue-200',
+  on_hold: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
   completed: 'bg-green-100 text-green-800 hover:bg-green-200',
+  archived: 'bg-slate-100 text-slate-800 hover:bg-slate-200',
 }
 
 const statusLabels = {
-  not_started: 'Not Started',
-  in_progress: 'In Progress',
+  planning: 'Planning',
+  active: 'Active',
+  on_hold: 'On Hold',
   completed: 'Completed',
+  archived: 'Archived',
 }
 
 export default function MilestonesPage() {

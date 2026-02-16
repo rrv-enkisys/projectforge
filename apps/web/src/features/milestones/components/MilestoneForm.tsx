@@ -147,9 +147,11 @@ export function MilestoneForm({ milestone, onSubmit, isSubmitting, defaultProjec
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="not_started">Not Started</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

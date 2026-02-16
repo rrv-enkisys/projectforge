@@ -53,9 +53,18 @@ export function ClientFormDialog({
       setOpen(false)
       onSuccess?.()
     } catch (error: any) {
-      const message = error?.response?.data?.detail ||
-                      error?.message ||
-                      'Failed to save client'
+      // Extract error message from Pydantic validation errors
+      let message = 'Failed to save client'
+      if (error?.response?.data?.detail) {
+        const detail = error.response.data.detail
+        if (Array.isArray(detail)) {
+          message = detail.map((err: any) => err.msg).join(', ')
+        } else if (typeof detail === 'string') {
+          message = detail
+        }
+      } else if (error?.message) {
+        message = error.message
+      }
       toast.error(message)
       console.error('Failed to save client:', error)
     }
