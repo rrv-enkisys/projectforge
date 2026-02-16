@@ -67,6 +67,34 @@ class MilestoneRepository:
 
         return milestones, total
 
+    async def list_all(
+        self, skip: int = 0, limit: int = 100
+    ) -> tuple[list[Milestone], int]:
+        """List all milestones for the organization."""
+        await self._set_context()
+
+        # Get total count
+        count_result = await self.db.execute(
+            select(func.count(Milestone.id)).where(
+                Milestone.organization_id == self.organization_id,
+            )
+        )
+        total = count_result.scalar_one()
+
+        # Get paginated results ordered by target_date
+        result = await self.db.execute(
+            select(Milestone)
+            .where(
+                Milestone.organization_id == self.organization_id,
+            )
+            .offset(skip)
+            .limit(limit)
+            .order_by(Milestone.target_date.asc().nulls_last(), Milestone.created_at.asc())
+        )
+        milestones = list(result.scalars().all())
+
+        return milestones, total
+
     async def create(self, data: MilestoneCreate) -> Milestone:
         """Create a new milestone."""
         try:

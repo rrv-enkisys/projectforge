@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Business logic for milestones."""
 from uuid import UUID
 
@@ -20,10 +22,13 @@ class MilestoneService:
         return MilestoneResponse.model_validate(milestone)
 
     async def list_milestones(
-        self, project_id: UUID, skip: int = 0, limit: int = 100
+        self, project_id: UUID | None = None, skip: int = 0, limit: int = 100
     ) -> tuple[list[MilestoneResponse], int]:
-        """List milestones for a project."""
-        milestones, total = await self.repository.list_by_project(project_id, skip, limit)
+        """List milestones for a project (or all if no project_id)."""
+        if project_id:
+            milestones, total = await self.repository.list_by_project(project_id, skip, limit)
+        else:
+            milestones, total = await self.repository.list_all(skip, limit)
         return [MilestoneResponse.model_validate(m) for m in milestones], total
 
     async def create_milestone(self, data: MilestoneCreate) -> MilestoneResponse:

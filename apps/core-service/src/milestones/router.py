@@ -23,12 +23,12 @@ def get_service(db: DatabaseSession, org_id: OrganizationId) -> MilestoneService
 
 @router.get("", response_model=MilestoneListResponse)
 async def list_milestones(
-    project_id: UUID = Query(..., description="Project ID to filter milestones"),
+    project_id: UUID | None = Query(None, description="Project ID to filter milestones"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     service: MilestoneService = Depends(get_service),
 ) -> MilestoneListResponse:
-    """List all milestones for a project, ordered by target date."""
+    """List all milestones for a project (or all if no project_id), ordered by target date."""
     milestones, total = await service.list_milestones(project_id, skip, limit)
     return MilestoneListResponse(
         data=milestones,
