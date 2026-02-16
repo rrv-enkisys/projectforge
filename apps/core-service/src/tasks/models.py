@@ -55,15 +55,15 @@ class Task(Base):
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus, native_enum=False),
+    status: Mapped[str] = mapped_column(
+        Enum(TaskStatus, name="task_status", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
-        default=TaskStatus.TODO,
+        default="todo",
     )
-    priority: Mapped[TaskPriority] = mapped_column(
-        Enum(TaskPriority, native_enum=False),
+    priority: Mapped[str] = mapped_column(
+        Enum(TaskPriority, name="task_priority", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
-        default=TaskPriority.MEDIUM,
+        default="medium",
     )
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
