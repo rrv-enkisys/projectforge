@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { MainLayout } from '@/components/layout/MainLayout'
+import { AppLayout } from '@/components/layout/AppLayout'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Plus, Calendar, MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -57,7 +56,7 @@ export default function MilestonesPage() {
   }
 
   return (
-    <MainLayout>
+    <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -97,9 +96,9 @@ export default function MilestonesPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg mb-2">{milestone.name}</h3>
-                    <Badge className={statusColors[milestone.status]}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[milestone.status]}`}>
                       {statusLabels[milestone.status]}
-                    </Badge>
+                    </span>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -159,6 +158,6 @@ export default function MilestonesPage() {
           </Card>
         )}
       </div>
-    </MainLayout>
+    </AppLayout>
   )
 }
