@@ -1,12 +1,27 @@
+import { useState } from 'react'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
 import { useProjects } from '@/features/projects/hooks/useProjects'
 import { ProjectCard } from '@/features/projects/components/ProjectCard'
-import { Plus } from 'lucide-react'
+import { ProjectFormDialog } from '@/features/projects/components/ProjectFormDialog'
+import type { Project } from '@/features/projects/types'
 
 export default function ProjectsPage() {
   const { data, isLoading, error } = useProjects()
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const handleEdit = (project: Project) => {
+    setEditingProject(project)
+    setIsDialogOpen(true)
+  }
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+    setEditingProject(null)
+  }
 
   return (
     <AppLayout>
@@ -19,10 +34,21 @@ export default function ProjectsPage() {
               Manage and track all your projects in one place
             </p>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+          <ProjectFormDialog
+            project={editingProject || undefined}
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) setEditingProject(null)
+            }}
+            onSuccess={handleDialogClose}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Project
+              </Button>
+            }
+          />
         </div>
 
         {/* Projects grid */}
@@ -39,16 +65,12 @@ export default function ProjectsPage() {
         ) : data?.data && data.data.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {data.data.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project.id} project={project} onEdit={handleEdit} />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
             <p className="text-slate-600">No projects found. Create your first project to get started.</p>
-            <Button className="mt-4">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Project
-            </Button>
           </div>
         )}
       </div>
