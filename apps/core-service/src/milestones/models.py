@@ -38,10 +38,10 @@ class Milestone(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     target_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
-    status: Mapped[MilestoneStatus] = mapped_column(
-        Enum(MilestoneStatus, native_enum=False),
+    status: Mapped[str] = mapped_column(
+        Enum(MilestoneStatus, name="project_status", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
-        default=MilestoneStatus.PLANNING,
+        default="planning",
         index=True,
     )
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
