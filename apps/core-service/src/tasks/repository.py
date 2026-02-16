@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Repository for task data access."""
 from uuid import UUID
 
@@ -35,6 +37,32 @@ class TaskRepository:
             raise NotFoundError("Task", str(task_id))
         return task
 
+    async def list_all(
+        self, skip: int = 0, limit: int = 100
+    ) -> tuple[list[Task], int]:
+        """List all tasks for the organization."""
+        await self._set_context()
+
+        count_result = await self.db.execute(
+            select(func.count(Task.id)).where(
+                Task.organization_id == self.organization_id,
+            )
+        )
+        total = count_result.scalar_one()
+
+        result = await self.db.execute(
+            select(Task)
+            .where(
+                Task.organization_id == self.organization_id,
+            )
+            .offset(skip)
+            .limit(limit)
+            .order_by(Task.created_at.desc())
+        )
+        tasks = list(result.scalars().all())
+
+        return tasks, total
+
     async def list_by_project(
         self, project_id: UUID, skip: int = 0, limit: int = 100
     ) -> tuple[list[Task], int]:
@@ -65,25 +93,40 @@ class TaskRepository:
 
     async def create(self, data: TaskCreate) -> Task:
         """Create a new task."""
-        await self._set_context()
-        task = Task(**data.model_dump(), organization_id=self.organization_id)
-        self.db.add(task)
-        await self.db.flush()
-        await self.db.refresh(task)
-        return task
+        try:
+            await self._set_context()
+            task = Task(**data.model_dump(), organization_id=self.organization_id)
+            self.db.add(task)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(task)
+            return task
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def update(self, task_id: UUID, data: TaskUpdate) -> Task:
         """Update a task."""
-        task = await self.get_by_id(task_id)
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(task, field, value)
-        await self.db.flush()
-        await self.db.refresh(task)
-        return task
+        try:
+            task = await self.get_by_id(task_id)
+            update_data = data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(task, field, value)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(task)
+            return task
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def delete(self, task_id: UUID) -> None:
         """Delete a task."""
-        task = await self.get_by_id(task_id)
-        await self.db.delete(task)
-        await self.db.flush()
+        try:
+            task = await self.get_by_id(task_id)
+            await self.db.delete(task)
+            await self.db.flush()
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Pydantic schemas for projects."""
 from datetime import date, datetime
 from uuid import UUID
@@ -16,6 +18,7 @@ class ProjectBase(BaseModel):
     status: ProjectStatus = ProjectStatus.PLANNING
     start_date: date | None = None
     end_date: date | None = None
+    budget: float | None = None
     settings: dict = Field(default_factory=dict)
 
 
@@ -34,6 +37,7 @@ class ProjectUpdate(BaseModel):
     status: ProjectStatus | None = None
     start_date: date | None = None
     end_date: date | None = None
+    budget: float | None = None
     settings: dict | None = None
 
 

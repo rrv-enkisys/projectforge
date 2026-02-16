@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Repository for project data access."""
 from uuid import UUID
 
@@ -59,25 +61,40 @@ class ProjectRepository:
 
     async def create(self, data: ProjectCreate) -> Project:
         """Create a new project."""
-        await self._set_context()
-        project = Project(**data.model_dump(), organization_id=self.organization_id)
-        self.db.add(project)
-        await self.db.flush()
-        await self.db.refresh(project)
-        return project
+        try:
+            await self._set_context()
+            project = Project(**data.model_dump(), organization_id=self.organization_id)
+            self.db.add(project)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(project)
+            return project
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def update(self, project_id: UUID, data: ProjectUpdate) -> Project:
         """Update a project."""
-        project = await self.get_by_id(project_id)
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(project, field, value)
-        await self.db.flush()
-        await self.db.refresh(project)
-        return project
+        try:
+            project = await self.get_by_id(project_id)
+            update_data = data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(project, field, value)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(project)
+            return project
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def delete(self, project_id: UUID) -> None:
         """Delete a project."""
-        project = await self.get_by_id(project_id)
-        await self.db.delete(project)
-        await self.db.flush()
+        try:
+            project = await self.get_by_id(project_id)
+            await self.db.delete(project)
+            await self.db.flush()
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise

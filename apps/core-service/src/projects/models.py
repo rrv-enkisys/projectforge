@@ -3,7 +3,7 @@ from datetime import date, datetime
 from enum import Enum as PyEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Date, Enum, ForeignKey, JSON, String, Text, func
+from sqlalchemy import Date, Enum, ForeignKey, JSON, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -36,13 +36,14 @@ class Project(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[ProjectStatus] = mapped_column(
-        Enum(ProjectStatus, native_enum=False),
+    status: Mapped[str] = mapped_column(
+        Enum(ProjectStatus, name="project_status", create_type=False, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
-        default=ProjectStatus.PLANNING,
+        default="planning",
     )
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    budget: Mapped[float | None] = mapped_column(Numeric(15, 2), nullable=True)
     settings: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

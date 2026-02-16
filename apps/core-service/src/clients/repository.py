@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Repository for client data access."""
 from uuid import UUID
 
@@ -59,25 +61,40 @@ class ClientRepository:
 
     async def create(self, data: ClientCreate) -> Client:
         """Create a new client."""
-        await self._set_context()
-        client = Client(**data.model_dump(), organization_id=self.organization_id)
-        self.db.add(client)
-        await self.db.flush()
-        await self.db.refresh(client)
-        return client
+        try:
+            await self._set_context()
+            client = Client(**data.model_dump(), organization_id=self.organization_id)
+            self.db.add(client)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(client)
+            return client
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def update(self, client_id: UUID, data: ClientUpdate) -> Client:
         """Update a client."""
-        client = await self.get_by_id(client_id)
-        update_data = data.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(client, field, value)
-        await self.db.flush()
-        await self.db.refresh(client)
-        return client
+        try:
+            client = await self.get_by_id(client_id)
+            update_data = data.model_dump(exclude_unset=True)
+            for field, value in update_data.items():
+                setattr(client, field, value)
+            await self.db.flush()
+            await self.db.commit()
+            await self.db.refresh(client)
+            return client
+        except Exception:
+            await self.db.rollback()
+            raise
 
     async def delete(self, client_id: UUID) -> None:
         """Delete a client."""
-        client = await self.get_by_id(client_id)
-        await self.db.delete(client)
-        await self.db.flush()
+        try:
+            client = await self.get_by_id(client_id)
+            await self.db.delete(client)
+            await self.db.flush()
+            await self.db.commit()
+        except Exception:
+            await self.db.rollback()
+            raise
