@@ -2,12 +2,15 @@
 Database connection and session management.
 Provides async SQLAlchemy engine and session factory.
 """
+import logging
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import event, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -18,6 +21,8 @@ from sqlalchemy.orm import DeclarativeBase
 
 from .config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""
@@ -25,14 +30,58 @@ class Base(DeclarativeBase):
     pass
 
 
-# Create async engine
+# Create async engine with optimized pool settings
 engine: AsyncEngine = create_async_engine(
     settings.database_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
+    echo=settings.debug,  # Log SQL in debug mode
+    pool_pre_ping=True,  # Verify connections before using
+    pool_size=10,  # Base connection pool size
+    max_overflow=20,  # Additional connections allowed during peak
+    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_timeout=30,  # Wait up to 30s for a connection
+    connect_args={
+        "server_settings": {
+            "application_name": "projectforge-core-service",
+        },
+    },
 )
+
+
+# Query performance monitoring
+@event.listens_for(Engine, "before_cursor_execute", named=True)
+def receive_before_cursor_execute(**kw: Any) -> None:
+    """Store query start time for performance monitoring."""
+    kw["conn"].info.setdefault("query_start_time", []).append(time.time())
+
+
+@event.listens_for(Engine, "after_cursor_execute", named=True)
+def receive_after_cursor_execute(**kw: Any) -> None:
+    """Log slow queries for performance monitoring."""
+    query_start_times = kw["conn"].info.get("query_start_time", [])
+    if query_start_times:
+        total_time = time.time() - query_start_times.pop(-1)
+
+        # Log slow queries (> 1 second)
+        if total_time > 1.0:
+            logger.warning(
+                f"Slow query detected ({total_time:.2f}s)",
+                extra={
+                    "duration_seconds": total_time,
+                    "statement": kw["statement"],
+                    "parameters": kw["parameters"],
+                },
+            )
+
+        # Log very slow queries as error (> 5 seconds)
+        if total_time > 5.0:
+            logger.error(
+                f"Very slow query detected ({total_time:.2f}s)",
+                extra={
+                    "duration_seconds": total_time,
+                    "statement": kw["statement"],
+                    "parameters": kw["parameters"],
+                },
+            )
 
 # Create session factory
 async_session_maker = async_sessionmaker(

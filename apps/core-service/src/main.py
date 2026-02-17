@@ -7,18 +7,20 @@ This is the main entry point for the Core Service, which handles:
 - Multi-tenant data isolation with RLS
 """
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .common.exceptions import (
+    BusinessRuleError,
     ConflictError,
     NotFoundError,
     PermissionDeniedError,
     UnauthorizedError,
     ValidationError,
+    business_rule_error_handler,
     conflict_error_handler,
     generic_exception_handler,
     not_found_error_handler,
@@ -26,6 +28,8 @@ from .common.exceptions import (
     unauthorized_error_handler,
     validation_error_handler,
 )
+from .common.health import HealthCheck
+from .common.logging import logging_middleware, setup_logging
 from .config import settings
 from .database import close_db, init_db
 from .clients.router import router as clients_router
@@ -43,6 +47,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Lifespan context manager for startup and shutdown events.
     """
     # Startup
+    # Setup structured logging
+    log_level = "DEBUG" if settings.debug else "INFO"
+    setup_logging(log_level)
+
     if settings.debug:
         # Only init DB in development mode
         # In production, use Alembic migrations
@@ -79,17 +87,18 @@ app = FastAPI(
 # Exception handlers
 app.add_exception_handler(NotFoundError, not_found_error_handler)  # type: ignore
 app.add_exception_handler(ValidationError, validation_error_handler)  # type: ignore
+app.add_exception_handler(BusinessRuleError, business_rule_error_handler)  # type: ignore
 app.add_exception_handler(PermissionDeniedError, permission_denied_error_handler)  # type: ignore
 app.add_exception_handler(UnauthorizedError, unauthorized_error_handler)  # type: ignore
 app.add_exception_handler(ConflictError, conflict_error_handler)  # type: ignore
 app.add_exception_handler(Exception, generic_exception_handler)  # type: ignore
 
 
-# Health check endpoint
+# Health check endpoints
 @app.get("/health", tags=["health"])
-async def health_check() -> dict[str, str]:
+async def health_check() -> dict[str, Any]:
     """
-    Health check endpoint.
+    Basic health check endpoint.
 
     Returns:
         dict: Health status
@@ -98,7 +107,22 @@ async def health_check() -> dict[str, str]:
         "status": "healthy",
         "service": "core-service",
         "version": settings.app_version,
+        "uptime_seconds": HealthCheck.get_uptime_seconds(),
     }
+
+
+@app.get("/health/detailed", tags=["health"])
+async def health_check_detailed() -> dict[str, Any]:
+    """
+    Detailed health check with dependency checks.
+
+    Returns:
+        dict: Detailed health status
+    """
+    health_status = await HealthCheck.get_health_status(detailed=True)
+    health_status["service"] = "core-service"
+    health_status["version"] = settings.app_version
+    return health_status
 
 
 # Root endpoint
@@ -127,16 +151,11 @@ app.include_router(tasks_router, prefix=settings.api_prefix)
 app.include_router(dashboard_router, prefix=settings.api_prefix)
 
 
-# Request logging middleware (optional, for debugging)
-if settings.debug:
-
-    @app.middleware("http")
-    async def log_requests(request: Request, call_next):  # type: ignore
-        """Log all HTTP requests in debug mode."""
-        print(f"{request.method} {request.url.path}")
-        response = await call_next(request)
-        print(f"  -> {response.status_code}")
-        return response
+# Structured logging middleware
+@app.middleware("http")
+async def structured_logging_middleware(request: Request, call_next):  # type: ignore
+    """Add structured logging to all requests."""
+    return await logging_middleware(request, call_next)
 
 
 if __name__ == "__main__":
