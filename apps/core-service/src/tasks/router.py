@@ -1,10 +1,21 @@
 """FastAPI router for task endpoints."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 
 from ..common.dependencies import DatabaseSession, OrganizationId
-from .schemas import TaskCreate, TaskListResponse, TaskResponse, TaskStatusUpdate, TaskUpdate
+from .schemas import (
+    TaskBulkCreate,
+    TaskBulkDelete,
+    TaskBulkUpdate,
+    TaskCreate,
+    TaskFilter,
+    TaskListResponse,
+    TaskResponse,
+    TaskSort,
+    TaskStatusUpdate,
+    TaskUpdate,
+)
 from .service import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -76,3 +87,53 @@ async def delete_task(
 ) -> None:
     """Delete a task."""
     await service.delete_task(task_id)
+
+
+# Bulk operations
+
+
+@router.post("/bulk", response_model=list[TaskResponse], status_code=status.HTTP_201_CREATED)
+async def bulk_create_tasks(
+    data: TaskBulkCreate,
+    service: TaskService = Depends(get_service),
+) -> list[TaskResponse]:
+    """Create multiple tasks at once."""
+    return await service.bulk_create_tasks(data)
+
+
+@router.patch("/bulk", response_model=dict[str, int])
+async def bulk_update_tasks(
+    data: TaskBulkUpdate,
+    service: TaskService = Depends(get_service),
+) -> dict[str, int]:
+    """Update multiple tasks at once."""
+    return await service.bulk_update_tasks(data)
+
+
+@router.delete("/bulk", response_model=dict[str, int])
+async def bulk_delete_tasks(
+    data: TaskBulkDelete,
+    service: TaskService = Depends(get_service),
+) -> dict[str, int]:
+    """Delete multiple tasks at once."""
+    return await service.bulk_delete_tasks(data)
+
+
+# Advanced filtering
+
+
+@router.post("/search", response_model=TaskListResponse)
+async def search_tasks(
+    filters: TaskFilter = Body(...),
+    sort: TaskSort | None = Body(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    service: TaskService = Depends(get_service),
+) -> TaskListResponse:
+    """Search tasks with advanced filtering and sorting."""
+    tasks, total = await service.list_tasks_filtered(filters, sort, skip, limit)
+    return TaskListResponse(
+        data=tasks,
+        total=total,
+        has_more=(skip + len(tasks)) < total,
+    )
