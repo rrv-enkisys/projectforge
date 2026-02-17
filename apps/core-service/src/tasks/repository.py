@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 """Repository for task data access."""
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..common.exceptions import NotFoundError
 from ..database import set_organization_context
-from .models import Task
-from .schemas import TaskCreate, TaskUpdate
+from .models import Task, TaskPriority, TaskStatus
+from .schemas import TaskCreate, TaskFilter, TaskSort, TaskUpdate
 
 
 class TaskRepository:
@@ -130,3 +131,160 @@ class TaskRepository:
         except Exception:
             await self.db.rollback()
             raise
+
+    async def get_ancestors(self, task_id: UUID) -> list[UUID]:
+        """Get all ancestor task IDs (parent, parent's parent, etc.)."""
+        await self._set_context()
+        ancestors = []
+        current_id = task_id
+
+        max_depth = 100  # Prevent infinite loops
+        depth = 0
+
+        while current_id and depth < max_depth:
+            result = await self.db.execute(
+                select(Task.parent_task_id).where(
+                    Task.id == current_id,
+                    Task.organization_id == self.organization_id,
+                )
+            )
+            parent_id = result.scalar_one_or_none()
+
+            if parent_id:
+                if parent_id in ancestors:
+                    # Circular dependency detected
+                    break
+                ancestors.append(parent_id)
+                current_id = parent_id
+            else:
+                break
+
+            depth += 1
+
+        return ancestors
+
+    async def bulk_create(self, tasks_data: list[TaskCreate]) -> list[Task]:
+        """Create multiple tasks."""
+        try:
+            await self._set_context()
+            tasks = [Task(**data.model_dump(), organization_id=self.organization_id) for data in tasks_data]
+            self.db.add_all(tasks)
+            await self.db.flush()
+            await self.db.commit()
+            for task in tasks:
+                await self.db.refresh(task)
+            return tasks
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def bulk_update(self, task_ids: list[UUID], data: TaskUpdate) -> int:
+        """Update multiple tasks. Returns number of updated tasks."""
+        try:
+            await self._set_context()
+            update_data = data.model_dump(exclude_unset=True)
+
+            stmt = (
+                update(Task)
+                .where(
+                    Task.id.in_(task_ids),
+                    Task.organization_id == self.organization_id,
+                )
+                .values(**update_data)
+            )
+
+            result = await self.db.execute(stmt)
+            await self.db.commit()
+            return result.rowcount  # type: ignore
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def bulk_delete(self, task_ids: list[UUID]) -> int:
+        """Delete multiple tasks. Returns number of deleted tasks."""
+        try:
+            await self._set_context()
+
+            stmt = delete(Task).where(
+                Task.id.in_(task_ids),
+                Task.organization_id == self.organization_id,
+            )
+
+            result = await self.db.execute(stmt)
+            await self.db.commit()
+            return result.rowcount  # type: ignore
+        except Exception:
+            await self.db.rollback()
+            raise
+
+    async def list_filtered(
+        self,
+        filters: TaskFilter,
+        sort: TaskSort | None = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[Task], int]:
+        """List tasks with advanced filtering and sorting."""
+        await self._set_context()
+
+        # Build base query
+        query = select(Task).where(Task.organization_id == self.organization_id)
+
+        # Apply filters
+        if filters.project_id:
+            query = query.where(Task.project_id == filters.project_id)
+
+        if filters.milestone_id:
+            query = query.where(Task.milestone_id == filters.milestone_id)
+
+        if filters.status:
+            query = query.where(Task.status.in_(filters.status))
+
+        if filters.priority:
+            query = query.where(Task.priority.in_(filters.priority))
+
+        if filters.start_date_from:
+            query = query.where(Task.start_date >= filters.start_date_from)
+
+        if filters.start_date_to:
+            query = query.where(Task.start_date <= filters.start_date_to)
+
+        if filters.due_date_from:
+            query = query.where(Task.due_date >= filters.due_date_from)
+
+        if filters.due_date_to:
+            query = query.where(Task.due_date <= filters.due_date_to)
+
+        if filters.search:
+            search_term = f"%{filters.search}%"
+            query = query.where(
+                or_(
+                    Task.title.ilike(search_term),
+                    Task.description.ilike(search_term),
+                )
+            )
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        count_result = await self.db.execute(count_query)
+        total = count_result.scalar_one()
+
+        # Apply sorting
+        if sort:
+            sort_column = getattr(Task, sort.field)
+            if sort.direction == "desc":
+                query = query.order_by(sort_column.desc())
+            else:
+                query = query.order_by(sort_column.asc())
+        else:
+            # Default sort
+            query = query.order_by(Task.position.asc(), Task.created_at.desc())
+
+        # Apply pagination
+        query = query.offset(skip).limit(limit)
+
+        # Execute
+        result = await self.db.execute(query)
+        tasks = list(result.scalars().all())
+
+        return tasks, total

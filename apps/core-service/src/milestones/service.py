@@ -5,6 +5,9 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..common.exceptions import NotFoundError
+from ..common.validators import DateValidator, StatusValidator
+from ..projects.repository import ProjectRepository
 from .models import MilestoneStatus
 from .repository import MilestoneRepository
 from .schemas import MilestoneCreate, MilestoneResponse, MilestoneUpdate
@@ -15,6 +18,9 @@ class MilestoneService:
 
     def __init__(self, db: AsyncSession, organization_id: UUID) -> None:
         self.repository = MilestoneRepository(db, organization_id)
+        self.project_repository = ProjectRepository(db, organization_id)
+        self.db = db
+        self.organization_id = organization_id
 
     async def get_milestone(self, milestone_id: UUID) -> MilestoneResponse:
         """Get milestone by ID."""
@@ -33,6 +39,22 @@ class MilestoneService:
 
     async def create_milestone(self, data: MilestoneCreate) -> MilestoneResponse:
         """Create a new milestone."""
+        # Validate project exists
+        try:
+            project = await self.project_repository.get_by_id(data.project_id)
+        except NotFoundError:
+            raise NotFoundError("Project", str(data.project_id))
+
+        # Validate target date is within project dates
+        if data.target_date:
+            DateValidator.validate_date_within_range(
+                data.target_date,
+                project.start_date,
+                project.end_date,
+                "milestone target_date",
+                "project",
+            )
+
         milestone = await self.repository.create(data)
         return MilestoneResponse.model_validate(milestone)
 
@@ -40,6 +62,29 @@ class MilestoneService:
         self, milestone_id: UUID, data: MilestoneUpdate
     ) -> MilestoneResponse:
         """Update a milestone."""
+        # Get current milestone
+        current_milestone = await self.repository.get_by_id(milestone_id)
+
+        # Validate status transition if status is being updated
+        if data.status is not None and data.status != current_milestone.status:
+            StatusValidator.validate_status_transition(
+                current_status=current_milestone.status.value,
+                new_status=data.status.value,
+                transitions=StatusValidator.MILESTONE_TRANSITIONS,
+                entity_type="milestone",
+            )
+
+        # Validate target date against project if being updated
+        if data.target_date is not None:
+            project = await self.project_repository.get_by_id(current_milestone.project_id)
+            DateValidator.validate_date_within_range(
+                data.target_date,
+                project.start_date,
+                project.end_date,
+                "milestone target_date",
+                "project",
+            )
+
         milestone = await self.repository.update(milestone_id, data)
         return MilestoneResponse.model_validate(milestone)
 
