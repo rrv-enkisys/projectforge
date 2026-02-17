@@ -87,3 +87,12 @@ class OrganizationMemberResponse(BaseModel):
     user: UserResponse | None = None
 
     model_config = {"from_attributes": True}
+
+
+class UserOrganizationResponse(BaseModel):
+    """Schema for user's primary organization lookup (used by API Gateway)."""
+
+    organization_id: UUID
+    role: OrgRole
+
+    model_config = {"from_attributes": True}

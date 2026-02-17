@@ -5,9 +5,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..common.exceptions import NotFoundError
 from .models import OrgRole
 from .repository import UserRepository
-from .schemas import UserCreate, UserResponse, UserUpdate, UserWithRole
+from .schemas import UserCreate, UserOrganizationResponse, UserResponse, UserUpdate, UserWithRole
 
 
 class UserService:
@@ -73,3 +74,32 @@ class UserService:
     async def remove_from_organization(self, user_id: UUID, organization_id: UUID) -> None:
         """Remove user from organization."""
         await self.repository.remove_from_organization(user_id, organization_id)
+
+    async def get_user_primary_organization(self, firebase_uid: str) -> UserOrganizationResponse:
+        """
+        Get user's primary organization by Firebase UID.
+        This is used by the API Gateway to establish tenant context.
+
+        Returns the first organization the user belongs to.
+        In the future, we could add a 'default_organization_id' field to the User model.
+        """
+        # First, get the user
+        user = await self.repository.get_by_firebase_uid(firebase_uid)
+        if not user:
+            raise NotFoundError("User", firebase_uid)
+
+        # Get user's organizations
+        memberships = await self.repository.get_user_organizations(user.id)
+        if not memberships:
+            raise NotFoundError(
+                "Organization membership",
+                f"User {firebase_uid} is not a member of any organization",
+            )
+
+        # Return the first organization (primary)
+        # In the future, we could sort by role (admin first) or add a default org field
+        primary = memberships[0]
+        return UserOrganizationResponse(
+            organization_id=primary.organization_id,
+            role=primary.role,
+        )

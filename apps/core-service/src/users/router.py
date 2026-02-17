@@ -10,6 +10,7 @@ from .schemas import (
     OrganizationMemberUpdate,
     UserCreate,
     UserListResponse,
+    UserOrganizationResponse,
     UserResponse,
     UserUpdate,
     UserWithRole,
@@ -57,6 +58,20 @@ async def list_users(
         total=total,
         has_more=(skip + len(users)) < total,
     )
+
+
+@router.get("/firebase/{firebase_uid}/organization", response_model=UserOrganizationResponse)
+async def get_user_organization_by_firebase_uid(
+    firebase_uid: str,
+    service: UserService = Depends(get_service),
+) -> UserOrganizationResponse:
+    """
+    Get user's primary organization by Firebase UID.
+
+    This endpoint is used by the API Gateway to establish tenant context.
+    Returns the organization_id and role of the user's primary organization.
+    """
+    return await service.get_user_primary_organization(firebase_uid)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
