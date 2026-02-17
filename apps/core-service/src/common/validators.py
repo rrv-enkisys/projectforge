@@ -154,14 +154,18 @@ class DependencyValidator:
         # Get all ancestors of the proposed parent
         try:
             ancestors = get_ancestors_fn(parent_id)
-            if item_id in ancestors:
-                raise BusinessRuleError(
-                    "Circular dependency detected: parent is a descendant of this item",
-                    rule="circular_dependency",
-                )
+        except BusinessRuleError:
+            # Re-raise BusinessRuleError
+            raise
         except Exception:
-            # If we can't get ancestors, allow it (parent might be new)
-            pass
+            # If we can't get ancestors for other reasons, allow it (parent might be new)
+            return
+
+        if item_id in ancestors:
+            raise BusinessRuleError(
+                "Circular dependency detected: parent is a descendant of this item",
+                rule="circular_dependency",
+            )
 
 
 class OrganizationValidator:

@@ -167,10 +167,12 @@ class TestDependencyValidator:
 
     def test_detect_circular_dependency_in_ancestors(self) -> None:
         """Test circular dependency - parent is descendant."""
+        from uuid import UUID
+
         item_id = uuid4()
         parent_id = uuid4()
 
-        def get_ancestors(pid):  # type: ignore
+        def get_ancestors(pid: UUID) -> list[UUID]:
             # Simulate that parent has item_id as ancestor
             return [item_id]
 
