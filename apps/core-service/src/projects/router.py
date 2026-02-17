@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
 from ..common.dependencies import DatabaseSession, OrganizationId
-from .schemas import ProjectCreate, ProjectListResponse, ProjectResponse, ProjectUpdate
+from .schemas import ProjectCreate, ProjectListResponse, ProjectResponse, ProjectStatistics, ProjectUpdate
 from .service import ProjectService
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -65,3 +65,12 @@ async def delete_project(
 ) -> None:
     """Delete a project."""
     await service.delete_project(project_id)
+
+
+@router.get("/{project_id}/statistics", response_model=ProjectStatistics)
+async def get_project_statistics(
+    project_id: UUID,
+    service: ProjectService = Depends(get_service),
+) -> ProjectStatistics:
+    """Get comprehensive statistics for a project."""
+    return await service.get_project_statistics(project_id)
