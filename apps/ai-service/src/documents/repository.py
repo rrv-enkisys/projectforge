@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Document repository for database operations"""
 from uuid import UUID
 

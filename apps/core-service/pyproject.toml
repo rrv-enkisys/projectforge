@@ -5,18 +5,19 @@ description = "ProjectForge Core Service"
 authors = ["Ricardo Reyes <ricardo@enkisys.net>"]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 fastapi = "^0.110.0"
 uvicorn = {extras = ["standard"], version = "^0.27.0"}
 sqlalchemy = "^2.0.27"
 asyncpg = "^0.29.0"
-pydantic = "^2.6.1"
+pydantic = {extras = ["email"], version = "^2.6.1"}
 pydantic-settings = "^2.1.0"
 alembic = "^1.13.1"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 firebase-admin = "^6.4.0"
 python-multipart = "^0.0.9"
 httpx = "^0.26.0"
+email-validator = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

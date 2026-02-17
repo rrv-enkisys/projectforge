@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Prompt templates for RAG"""
 
 RAG_SYSTEM_PROMPT = """You are an AI assistant helping users understand their project documentation.

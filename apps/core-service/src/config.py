@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Configuration module using Pydantic Settings.
 Loads configuration from environment variables.

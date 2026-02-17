@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """AI Copilot service"""
 import json
 import logging

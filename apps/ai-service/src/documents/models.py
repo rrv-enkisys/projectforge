@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Document and chunk models with vector embeddings"""
 from datetime import datetime
 from typing import TYPE_CHECKING

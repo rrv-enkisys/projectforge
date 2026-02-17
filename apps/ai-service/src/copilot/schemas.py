@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Copilot schemas"""
 from typing import Any
 from uuid import UUID

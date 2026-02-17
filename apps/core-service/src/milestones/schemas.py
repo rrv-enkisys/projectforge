@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Pydantic schemas for milestones."""
 from datetime import date, datetime
 from uuid import UUID

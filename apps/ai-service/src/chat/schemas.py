@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Chat schemas"""
 from datetime import datetime
 from uuid import UUID

@@ -103,9 +103,9 @@ async def set_organization_context(
             await set_organization_context(db, org_id)
             projects = await db.execute(select(Project))
     """
+    # Use string formatting for SET LOCAL since it doesn't accept bind parameters
     await session.execute(
-        text("SET LOCAL app.current_organization_id = :org_id"),
-        {"org_id": str(organization_id)},
+        text(f"SET LOCAL app.current_organization_id = '{organization_id}'"),
     )
 
 

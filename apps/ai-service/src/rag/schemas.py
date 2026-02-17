@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """RAG schemas"""
 from uuid import UUID
 

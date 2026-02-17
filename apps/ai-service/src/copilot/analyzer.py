@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Project analysis utilities"""
 import json
 import logging

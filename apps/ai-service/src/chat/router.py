@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Chat API endpoints"""
 from uuid import UUID
 
@@ -96,7 +98,7 @@ async def delete_chat_session(
     session_id: UUID,
     service: ChatService = Depends(),
     x_organization_id: UUID = Header(..., alias="X-Organization-ID")
-) -> None:
+):
     """Delete a chat session and all its messages"""
     deleted = await service.delete_session(session_id, x_organization_id)
     if not deleted:

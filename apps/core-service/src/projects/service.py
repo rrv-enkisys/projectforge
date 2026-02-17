@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Business logic for projects."""
 from uuid import UUID
 

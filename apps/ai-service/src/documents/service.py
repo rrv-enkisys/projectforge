@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Document service layer"""
 from uuid import UUID
 

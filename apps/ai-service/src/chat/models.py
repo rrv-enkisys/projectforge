@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Chat models for conversation history"""
 from datetime import datetime
 from typing import TYPE_CHECKING

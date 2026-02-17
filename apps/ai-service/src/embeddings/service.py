@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Embedding generation service"""
 import logging
 from uuid import UUID

@@ -68,7 +68,7 @@ async def delete_document(
     document_id: UUID,
     service: DocumentService = Depends(),
     x_organization_id: UUID = Header(..., alias="X-Organization-ID")
-) -> None:
+):
     """Delete a document and all its chunks"""
     deleted = await service.delete_document(document_id, x_organization_id)
     if not deleted:

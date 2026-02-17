@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """AI Copilot API endpoints"""
 from typing import Any
 from uuid import UUID

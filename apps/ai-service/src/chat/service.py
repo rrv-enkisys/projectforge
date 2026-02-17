@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Chat service for conversation management"""
 import logging
 from uuid import UUID

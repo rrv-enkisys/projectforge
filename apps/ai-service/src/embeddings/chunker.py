@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Text chunking utilities"""
 import logging
 from typing import Any

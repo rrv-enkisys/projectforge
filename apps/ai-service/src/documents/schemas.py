@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Document schemas for validation"""
 from datetime import datetime
 from uuid import UUID

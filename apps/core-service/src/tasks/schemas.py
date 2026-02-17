@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Pydantic schemas for tasks."""
 from datetime import date, datetime
 from decimal import Decimal

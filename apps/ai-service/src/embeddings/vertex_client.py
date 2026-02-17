@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Vertex AI client for embeddings and LLM"""
 import logging
 from typing import Any
