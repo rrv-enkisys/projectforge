@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Business logic for tasks."""
 from uuid import UUID
 
@@ -19,10 +21,14 @@ class TaskService:
         return TaskResponse.model_validate(task)
 
     async def list_tasks(
-        self, project_id: UUID, skip: int = 0, limit: int = 100
+        self, project_id: UUID | None, skip: int = 0, limit: int = 100
     ) -> tuple[list[TaskResponse], int]:
-        """List tasks for a project."""
-        tasks, total = await self.repository.list_by_project(project_id, skip, limit)
+        """List tasks for a project, or all tasks if project_id is None."""
+        if project_id:
+            tasks, total = await self.repository.list_by_project(project_id, skip, limit)
+        else:
+            # List all tasks for the organization
+            tasks, total = await self.repository.list_all(skip, limit)
         return [TaskResponse.model_validate(t) for t in tasks], total
 
     async def create_task(self, data: TaskCreate) -> TaskResponse:

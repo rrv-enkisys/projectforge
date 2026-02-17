@@ -17,12 +17,12 @@ def get_service(db: DatabaseSession, org_id: OrganizationId) -> TaskService:
 
 @router.get("", response_model=TaskListResponse)
 async def list_tasks(
-    project_id: UUID = Query(..., description="Project ID to filter tasks"),
+    project_id: UUID | None = Query(None, description="Project ID to filter tasks (optional)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     service: TaskService = Depends(get_service),
 ) -> TaskListResponse:
-    """List all tasks for a project."""
+    """List all tasks for a project (or all tasks if project_id not provided)."""
     tasks, total = await service.list_tasks(project_id, skip, limit)
     return TaskListResponse(
         data=tasks,

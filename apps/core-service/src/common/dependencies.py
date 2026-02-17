@@ -64,6 +64,15 @@ async def get_current_user(
         async def get_me(user: CurrentUser = Depends(get_current_user)):
             return {"uid": user.uid, "email": user.email}
     """
+    # DEVELOPMENT MODE: Bypass authentication when DEBUG=true
+    if settings.debug:
+        return CurrentUser(
+            uid="ricardo-firebase-uid",
+            email="ricardo@enkisys.net",
+            name="Ricardo Reyes",
+            organization_id=UUID("11111111-1111-1111-1111-111111111111"),
+        )
+
     if not authorization:
         raise UnauthorizedError("Missing authorization header")
 
