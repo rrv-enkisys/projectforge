@@ -29,6 +29,7 @@ from .common.exceptions import (
 from .config import settings
 from .database import close_db, init_db
 from .clients.router import router as clients_router
+from .dashboard.router import router as dashboard_router
 from .milestones.router import router as milestones_router
 from .organizations.router import router as organizations_router
 from .projects.router import router as projects_router
@@ -123,6 +124,7 @@ app.include_router(users_router, prefix=settings.api_prefix)
 app.include_router(projects_router, prefix=settings.api_prefix)
 app.include_router(milestones_router, prefix=settings.api_prefix)
 app.include_router(tasks_router, prefix=settings.api_prefix)
+app.include_router(dashboard_router, prefix=settings.api_prefix)
 
 
 # Request logging middleware (optional, for debugging)

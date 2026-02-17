@@ -99,6 +99,9 @@ func main() {
 		r.HandleFunc("/users", proxyHandler.ProxyToCore())
 		r.HandleFunc("/users/*", proxyHandler.ProxyToCore())
 
+		r.HandleFunc("/dashboard", proxyHandler.ProxyToCore())
+		r.HandleFunc("/dashboard/*", proxyHandler.ProxyToCore())
+
 		// AI Service routes
 		r.HandleFunc("/documents", proxyHandler.ProxyToAI())
 		r.HandleFunc("/documents/*", proxyHandler.ProxyToAI())

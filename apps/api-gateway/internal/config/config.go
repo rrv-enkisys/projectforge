@@ -32,8 +32,8 @@ func Load() *Config {
 	return &Config{
 		Port:                  getEnv("PORT", "8080"),
 		Environment:           getEnv("ENVIRONMENT", "development"),
-		CoreServiceURL:        getEnv("CORE_SERVICE_URL", "http://localhost:8000"),
-		AIServiceURL:          getEnv("AI_SERVICE_URL", "http://localhost:8001"),
+		CoreServiceURL:        getEnv("CORE_SERVICE_URL", "http://localhost:8001"),
+		AIServiceURL:          getEnv("AI_SERVICE_URL", "http://localhost:8002"),
 		FirebaseProjectID:     getEnv("FIREBASE_PROJECT_ID", ""),
 		FirebaseCredentials:   getEnv("FIREBASE_CREDENTIALS", ""),
 		RateLimitRPS:          getEnvAsInt("RATE_LIMIT_RPS", 100),
