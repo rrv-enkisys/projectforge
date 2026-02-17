@@ -2,8 +2,11 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 
+	"github.com/projectforge/api-gateway/internal/client"
 	"github.com/projectforge/api-gateway/pkg/response"
 )
 
@@ -23,84 +26,77 @@ const (
 )
 
 // Tenant creates a tenant middleware that extracts and validates organization context
-func Tenant() func(http.Handler) http.Handler {
+func Tenant(coreServiceClient *client.CoreServiceClient) func(http.Handler) http.Handler {
+	// Check if running in development mode
+	isDevelopment := os.Getenv("ENVIRONMENT") == "development"
+	logger := slog.Default()
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			// Get user claims from context (set by Auth middleware)
-			claims := GetUserClaims(ctx)
-			if claims == nil {
-				response.Unauthorized(w, "User claims not found")
+			// Get user UID from context (set by Auth middleware)
+			userUID := GetUserUID(ctx)
+			if userUID == "" {
+				response.Unauthorized(w, "User UID not found in context")
 				return
 			}
 
-			// Try to get organization_id from header first (for explicit org selection)
-			organizationID := r.Header.Get(HeaderOrganizationID)
+			userEmail := GetUserEmail(ctx)
 
-			// If not in header, try to get from custom claims
-			if organizationID == "" {
-				if orgID, ok := claims["organization_id"].(string); ok {
-					organizationID = orgID
-				}
-			}
+			var organizationID string
+			var userRole string
 
-			// If still not found, try to get from organizations array (first one)
-			if organizationID == "" {
-				if orgs, ok := claims["organizations"].([]interface{}); ok && len(orgs) > 0 {
-					if orgMap, ok := orgs[0].(map[string]interface{}); ok {
-						if orgID, ok := orgMap["id"].(string); ok {
-							organizationID = orgID
-						}
+			// DEVELOPMENT MODE: Use hardcoded organization for development
+			if isDevelopment {
+				logger.Debug("Tenant context bypass in development mode", "user_uid", userUID)
+				organizationID = "11111111-1111-1111-1111-111111111111"
+				userRole = "admin"
+			} else {
+				// PRODUCTION MODE: Fetch organization from Core Service
+				logger.Debug("Fetching user organization from Core Service", "user_uid", userUID)
+
+				userOrg, err := coreServiceClient.GetUserOrganization(ctx, userUID)
+				if err != nil {
+					logger.Error("Failed to fetch user organization",
+						"user_uid", userUID,
+						"error", err)
+
+					// Check if it's a not found error
+					if err.Error() == "user or organization not found for firebase_uid: "+userUID {
+						response.NotFound(w, "User is not associated with any organization. Please contact support.")
+					} else {
+						response.ServiceUnavailable(w, "Unable to determine user organization. Please try again.")
 					}
+					return
 				}
-			}
 
-			// Organization ID is optional for some endpoints (e.g., /users/me)
-			// So we don't enforce it here, but we set it if available
+				organizationID = userOrg.OrganizationID
+				userRole = userOrg.Role
 
-			// Get user role for this organization (if available)
-			userRole := ""
-			if organizationID != "" {
-				// Try to extract role from claims
-				if orgs, ok := claims["organizations"].([]interface{}); ok {
-					for _, org := range orgs {
-						if orgMap, ok := org.(map[string]interface{}); ok {
-							if orgID, ok := orgMap["id"].(string); ok && orgID == organizationID {
-								if role, ok := orgMap["role"].(string); ok {
-									userRole = role
-								}
-								break
-							}
-						}
-					}
-				}
+				logger.Info("Tenant context established",
+					"user_uid", userUID,
+					"organization_id", organizationID,
+					"role", userRole)
 			}
 
 			// Add organization context to context
-			if organizationID != "" {
-				ctx = context.WithValue(ctx, OrganizationIDKey, organizationID)
-			}
-			if userRole != "" {
-				ctx = context.WithValue(ctx, UserRoleKey, userRole)
-			}
+			ctx = context.WithValue(ctx, OrganizationIDKey, organizationID)
+			ctx = context.WithValue(ctx, UserRoleKey, userRole)
 
 			// Set headers for downstream services
-			userUID := GetUserUID(ctx)
-			userEmail := GetUserEmail(ctx)
-
-			if organizationID != "" {
-				r.Header.Set(HeaderOrganizationID, organizationID)
-			}
-			if userUID != "" {
-				r.Header.Set(HeaderUserID, userUID)
-			}
+			// These headers are CRITICAL for multi-tenant isolation
+			r.Header.Set(HeaderOrganizationID, organizationID)
+			r.Header.Set(HeaderUserID, userUID)
 			if userEmail != "" {
 				r.Header.Set(HeaderUserEmail, userEmail)
 			}
-			if userRole != "" {
-				r.Header.Set(HeaderUserRole, userRole)
-			}
+			r.Header.Set(HeaderUserRole, userRole)
+
+			logger.Debug("Forwarding request with tenant context",
+				"path", r.URL.Path,
+				"organization_id", organizationID,
+				"user_uid", userUID)
 
 			// Continue with the request
 			next.ServeHTTP(w, r.WithContext(ctx))

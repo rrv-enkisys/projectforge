@@ -14,6 +14,7 @@ import (
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 
+	"github.com/projectforge/api-gateway/internal/client"
 	"github.com/projectforge/api-gateway/internal/config"
 	"github.com/projectforge/api-gateway/internal/firebase"
 	"github.com/projectforge/api-gateway/internal/handler"
@@ -48,6 +49,9 @@ func main() {
 		log.Fatalf("Failed to initialize Firebase client: %v", err)
 	}
 
+	// Initialize Core Service client
+	coreServiceClient := client.NewCoreServiceClient(cfg.CoreServiceURL, logger)
+
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
 	proxyHandler := handler.NewProxyHandler(cfg.CoreServiceURL, cfg.AIServiceURL, logger)
@@ -71,11 +75,11 @@ func main() {
 
 	// API routes (authenticated)
 	r.Route("/api/v1", func(r chi.Router) {
-		// Authentication middleware
+		// Authentication middleware (validates Firebase token)
 		r.Use(middleware.Auth(firebaseClient))
 
-		// Tenant middleware (extracts organization context)
-		r.Use(middleware.Tenant())
+		// Tenant middleware (extracts organization context from Core Service)
+		r.Use(middleware.Tenant(coreServiceClient))
 
 		// Rate limiting middleware
 		r.Use(middleware.RateLimit(rateLimiter))

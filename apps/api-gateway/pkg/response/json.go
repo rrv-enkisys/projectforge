@@ -74,3 +74,8 @@ func InternalError(w http.ResponseWriter, message string) {
 func TooManyRequests(w http.ResponseWriter, message string) {
 	Error(w, http.StatusTooManyRequests, "too_many_requests", message)
 }
+
+// ServiceUnavailable writes a 503 Service Unavailable response
+func ServiceUnavailable(w http.ResponseWriter, message string) {
+	Error(w, http.StatusServiceUnavailable, "service_unavailable", message)
+}
