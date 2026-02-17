@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/projectforge/api-gateway/internal/client"
 	"github.com/projectforge/api-gateway/internal/config"
@@ -59,6 +60,9 @@ func main() {
 	// Initialize rate limiter
 	rateLimiter := middleware.NewRateLimiter(cfg.RateLimitRPS)
 
+	// Initialize metrics
+	metrics := middleware.NewMetrics()
+
 	// Initialize router
 	r := chi.NewRouter()
 
@@ -66,12 +70,14 @@ func main() {
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
 	r.Use(middleware.StructuredLogger(logger))
+	r.Use(middleware.MetricsMiddleware(metrics))
 	r.Use(chimiddleware.Recoverer)
 	r.Use(middleware.CORS(cfg.CORSOrigins))
 	r.Use(chimiddleware.Timeout(60 * time.Second))
 
 	// Public routes (no authentication required)
 	r.Get("/health", healthHandler.Check)
+	r.Handle("/metrics", promhttp.Handler())
 
 	// API routes (authenticated)
 	r.Route("/api/v1", func(r chi.Router) {
