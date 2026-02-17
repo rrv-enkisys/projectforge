@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Configuration settings for AI Service"""
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +14,7 @@ class Settings(BaseSettings):
     port: int = 8001
     environment: str = "development"
     api_prefix: str = "/api/v1"
+    debug: bool = False
 
     # Database
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/projectforge"
