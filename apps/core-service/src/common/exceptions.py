@@ -55,6 +55,14 @@ class ConflictError(ProjectForgeException):
         super().__init__(message, code="CONFLICT")
 
 
+class BusinessRuleError(ProjectForgeException):
+    """Raised when a business rule is violated."""
+
+    def __init__(self, message: str, rule: str | None = None) -> None:
+        self.rule = rule
+        super().__init__(message, code="BUSINESS_RULE_VIOLATION")
+
+
 # Exception handlers for FastAPI
 
 
@@ -140,6 +148,26 @@ async def conflict_error_handler(
                 "message": exc.message,
             }
         },
+    )
+
+
+async def business_rule_error_handler(
+    request: Request,
+    exc: BusinessRuleError,
+) -> JSONResponse:
+    """Handle BusinessRuleError exceptions."""
+    content: dict[str, Any] = {
+        "error": {
+            "code": exc.code,
+            "message": exc.message,
+        }
+    }
+    if exc.rule:
+        content["error"]["rule"] = exc.rule
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=content,
     )
 
 
