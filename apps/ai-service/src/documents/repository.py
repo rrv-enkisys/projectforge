@@ -159,3 +159,11 @@ class DocumentRepository:
 
         result = await self.db.execute(query)
         return [(row[0], float(row[1])) for row in result.all()]
+
+    async def delete_chunks(self, document_id: UUID) -> int:
+        """Delete all chunks for a document."""
+        result = await self.db.execute(
+            delete(DocumentChunk).where(DocumentChunk.document_id == document_id)
+        )
+        await self.db.commit()
+        return result.rowcount  # type: ignore
