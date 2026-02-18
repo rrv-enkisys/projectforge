@@ -29,7 +29,7 @@ class ProjectAnalyzer:
         # Analyze task completion rate
         tasks = project_data.get("tasks", [])
         if tasks:
-            completed_tasks = [t for t in tasks if t.get("status") == "completed"]
+            completed_tasks = [t for t in tasks if t.get("status") in ("done", "completed")]
             completion_rate = len(completed_tasks) / len(tasks)
 
             if completion_rate < 0.3:
@@ -41,7 +41,7 @@ class ProjectAnalyzer:
         overdue_tasks = [
             t for t in tasks
             if t.get("due_date") and datetime.fromisoformat(t["due_date"]) < now
-            and t.get("status") != "completed"
+            and t.get("status") not in ("done", "completed")
         ]
 
         if overdue_tasks:
@@ -97,7 +97,7 @@ class ProjectAnalyzer:
         overdue_count = sum(
             1 for t in tasks
             if t.get("due_date") and datetime.fromisoformat(t["due_date"]) < now
-            and t.get("status") != "completed"
+            and t.get("status") not in ("done", "completed")
         )
 
         if overdue_count > 5:
@@ -179,7 +179,7 @@ class ProjectAnalyzer:
             }
 
         # Calculate completion velocity
-        completed_tasks = [t for t in tasks if t.get("status") == "completed"]
+        completed_tasks = [t for t in tasks if t.get("status") in ("done", "completed")]
         if not completed_tasks:
             return {
                 "predicted_date": None,

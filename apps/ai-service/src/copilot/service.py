@@ -3,14 +3,18 @@ from __future__ import annotations
 """AI Copilot service"""
 import json
 import logging
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..database import get_db
 from ..embeddings.vertex_client import VertexAIClient, get_vertex_client
 from ..rag.prompts import build_risk_analysis_prompt, build_timeline_prediction_prompt
 from .analyzer import ProjectAnalyzer
+from .project_data import ProjectDataRepository
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +22,32 @@ logger = logging.getLogger(__name__)
 class CopilotService:
     """Service for AI-powered project insights"""
 
-    def __init__(self, vertex_client: VertexAIClient = Depends(get_vertex_client)):
+    def __init__(
+        self,
+        db: AsyncSession = Depends(get_db),
+        vertex_client: VertexAIClient = Depends(get_vertex_client),
+    ) -> None:
+        self.db = db
         self.vertex_client = vertex_client
         self.analyzer = ProjectAnalyzer()
+        self.project_data_repo = ProjectDataRepository(db)
+
+    async def analyze_project_by_id(
+        self,
+        project_id: UUID,
+        organization_id: UUID,
+    ) -> dict:
+        """Fetch real project data and perform analysis."""
+        project_data = await self.project_data_repo.get_project_data(project_id, organization_id)
+        if not project_data:
+            return {
+                "health": {"score": 0, "status": "unknown", "issues": ["Project not found"], "task_completion_rate": 0, "overdue_tasks_count": 0, "overdue_milestones_count": 0},
+                "risks": [],
+                "completion_prediction": {"predicted_date": None, "confidence": "low", "reasoning": "Project not found"},
+                "ai_insights": "Project data could not be retrieved.",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        return await self.analyze_project(project_data)
 
     async def analyze_project(self, project_data: dict) -> dict:
         """
@@ -73,7 +100,7 @@ Keep it concise and actionable.
             "risks": risks,
             "completion_prediction": prediction,
             "ai_insights": ai_insights,
-            "timestamp": "utcnow"
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     async def get_risk_analysis(self, project_data: dict) -> dict:
