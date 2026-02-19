@@ -78,6 +78,31 @@ class DocumentRepository:
 
         return documents, total
 
+    async def get_by_org(
+        self,
+        organization_id: UUID,
+        project_id: UUID | None = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> tuple[list[Document], int]:
+        """Get documents by organization with optional project filter"""
+        filters = [Document.organization_id == organization_id]
+        if project_id:
+            filters.append(Document.project_id == project_id)
+
+        count_query = select(func.count(Document.id)).where(*filters)
+        total = await self.db.scalar(count_query) or 0
+
+        query = (
+            select(Document)
+            .where(*filters)
+            .order_by(Document.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        return list(result.scalars().all()), total
+
     async def update_status(
         self,
         document_id: UUID,

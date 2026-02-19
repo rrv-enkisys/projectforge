@@ -20,7 +20,8 @@ export interface Document {
 export interface DocumentListResponse {
   data: Document[]
   total: number
-  has_more: boolean
+  skip: number
+  limit: number
 }
 
 export function useDocuments(projectId?: string) {

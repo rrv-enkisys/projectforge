@@ -94,6 +94,27 @@ class ChatService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def list_user_sessions(
+        self,
+        organization_id: UUID,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> list[ChatSession]:
+        """List all chat sessions for a user across all projects"""
+        query = (
+            select(ChatSession)
+            .where(
+                ChatSession.organization_id == organization_id,
+                ChatSession.user_id == user_id,
+            )
+            .order_by(ChatSession.updated_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def add_message(
         self,
         session_id: UUID,

@@ -45,6 +45,7 @@ app = FastAPI(
     description="AI service for RAG, embeddings, chat, and project copilot features",
     version="0.1.0",
     lifespan=lifespan,
+    redirect_slashes=False,
     docs_url=f"{settings.api_prefix}/docs" if settings.debug else None,
     redoc_url=f"{settings.api_prefix}/redoc" if settings.debug else None,
 )

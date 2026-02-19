@@ -17,15 +17,27 @@ class VertexAIClient:
     """Client for Vertex AI services"""
 
     def __init__(self):
-        """Initialize Vertex AI client"""
+        """Initialize Vertex AI client with lazy model loading"""
         aiplatform.init(
             project=settings.gcp_project_id,
             location=settings.gcp_location
         )
-        self.embedding_model = TextEmbeddingModel.from_pretrained(
-            settings.vertex_embedding_model
-        )
-        self.llm_model = GenerativeModel(settings.vertex_llm_model)
+        self._embedding_model: TextEmbeddingModel | None = None
+        self._llm_model: GenerativeModel | None = None
+
+    @property
+    def embedding_model(self) -> TextEmbeddingModel:
+        if self._embedding_model is None:
+            self._embedding_model = TextEmbeddingModel.from_pretrained(
+                settings.vertex_embedding_model
+            )
+        return self._embedding_model
+
+    @property
+    def llm_model(self) -> GenerativeModel:
+        if self._llm_model is None:
+            self._llm_model = GenerativeModel(settings.vertex_llm_model)
+        return self._llm_model
 
     async def generate_embeddings(
         self,

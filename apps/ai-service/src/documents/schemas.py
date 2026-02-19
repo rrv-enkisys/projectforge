@@ -64,7 +64,7 @@ class DocumentWithChunks(DocumentResponse):
 class DocumentListResponse(BaseModel):
     """Paginated list of documents"""
 
-    items: list[DocumentResponse]
+    data: list[DocumentResponse]
     total: int
     skip: int
     limit: int

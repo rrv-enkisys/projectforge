@@ -18,6 +18,24 @@ from .service import ChatService
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+@router.get("/sessions", response_model=list[SessionResponse])
+async def list_user_sessions(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    service: ChatService = Depends(),
+    x_organization_id: UUID = Header(..., alias="X-Organization-ID"),
+    x_user_id: str = Header(..., alias="X-User-ID"),
+) -> list[SessionResponse]:
+    """List all chat sessions for the current user across all projects"""
+    sessions = await service.list_user_sessions(
+        organization_id=x_organization_id,
+        user_id=x_user_id,
+        skip=skip,
+        limit=limit,
+    )
+    return [SessionResponse.model_validate(s) for s in sessions]
+
+
 @router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_chat_session(
     data: CreateSession,
@@ -49,6 +67,22 @@ async def get_chat_session(
             detail="Chat session not found",
         )
     return SessionWithMessages.model_validate(session)
+
+
+@router.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])
+async def get_session_messages(
+    session_id: UUID,
+    service: ChatService = Depends(),
+    x_organization_id: UUID = Header(..., alias="X-Organization-ID"),
+) -> list[MessageResponse]:
+    """Get all messages for a chat session"""
+    session = await service.get_session(session_id, x_organization_id, with_messages=True)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat session not found",
+        )
+    return [MessageResponse.model_validate(m) for m in session.messages]
 
 
 @router.get("/projects/{project_id}/sessions", response_model=list[SessionResponse])

@@ -84,6 +84,16 @@ class DocumentService:
         """List documents for a project"""
         return await self.repository.get_by_project(project_id, organization_id, skip, limit)
 
+    async def list_documents(
+        self,
+        organization_id: UUID,
+        project_id: UUID | None = None,
+        skip: int = 0,
+        limit: int = 20
+    ) -> tuple[list[Document], int]:
+        """List documents for an org with optional project filter"""
+        return await self.repository.get_by_org(organization_id, project_id, skip, limit)
+
     async def update_document_status(
         self,
         document_id: UUID,
