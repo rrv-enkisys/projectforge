@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, FolderKanban, Users, FileText, Settings, ChevronLeft, CheckSquare, Target } from 'lucide-react'
+import { Home, FolderKanban, Users, FileText, Settings, ChevronLeft, CheckSquare, Target, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ const navigation = [
   { name: 'Milestones', href: '/milestones', icon: Target },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Documents', href: '/documents', icon: FileText },
+  { name: 'AI Chat', href: '/chat', icon: Bot },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 

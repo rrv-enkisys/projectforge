@@ -13,6 +13,9 @@ import ProjectDetailPage from './pages/ProjectDetailPage'
 import ClientsPage from './pages/ClientsPage'
 import TasksPage from './pages/TasksPage'
 import MilestonesPage from './pages/MilestonesPage'
+import DocumentsPage from './pages/DocumentsPage'
+import ChatPage from './pages/ChatPage'
+import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 const queryClient = new QueryClient({
@@ -84,9 +87,34 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/documents"
+                element={
+                  <ProtectedRoute>
+                    <DocumentsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Redirects */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/profile" element={<Navigate to="/settings" replace />} />
 
               {/* 404 */}
               <Route path="*" element={<NotFoundPage />} />

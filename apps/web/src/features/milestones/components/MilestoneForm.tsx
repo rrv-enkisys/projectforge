@@ -41,7 +41,7 @@ export function MilestoneForm({ milestone, onSubmit, isSubmitting, defaultProjec
       description: milestone?.description || '',
       project_id: milestone?.project_id || defaultProjectId || '',
       target_date: milestone?.target_date || '',
-      status: milestone?.status || 'not_started',
+      status: milestone?.status || 'planning',
     },
   })
 
