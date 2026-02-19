@@ -40,8 +40,8 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ['notifications-unread-count'],
     queryFn: async () => {
-      const response = await api.get<{ count: number }>(`${NOTIF_BASE}/unread-count`)
-      return response.data.count
+      const response = await api.get<{ unread_count: number }>(`${NOTIF_BASE}/unread-count`)
+      return response.data.unread_count
     },
     // Stop polling on error to avoid console spam when service is unavailable
     refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),

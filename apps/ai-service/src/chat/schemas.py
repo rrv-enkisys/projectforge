@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class CreateSession(BaseModel):
     """Schema for creating a chat session"""
 
-    project_id: UUID
+    project_id: UUID | None = None
     title: str | None = None
 
 
@@ -42,7 +42,7 @@ class SessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    project_id: UUID
+    project_id: UUID | None
     organization_id: UUID
     user_id: str
     title: str | None

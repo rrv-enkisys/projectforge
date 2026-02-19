@@ -20,7 +20,7 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    project_id: Mapped[UUID] = mapped_column(index=True)
+    project_id: Mapped[UUID | None] = mapped_column(index=True, nullable=True)
     organization_id: Mapped[UUID] = mapped_column(index=True)
     user_id: Mapped[str] = mapped_column(String(255))  # Firebase UID
 

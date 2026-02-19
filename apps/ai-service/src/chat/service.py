@@ -37,7 +37,7 @@ class ChatService:
 
     async def create_session(
         self,
-        project_id: UUID,
+        project_id: UUID | None,
         organization_id: UUID,
         user_id: str,
         title: str | None = None,
