@@ -55,7 +55,7 @@ func main() {
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
-	proxyHandler := handler.NewProxyHandler(cfg.CoreServiceURL, cfg.AIServiceURL, logger)
+	proxyHandler := handler.NewProxyHandler(cfg.CoreServiceURL, cfg.AIServiceURL, cfg.NotificationServiceURL, logger)
 
 	// Initialize rate limiter
 	rateLimiter := middleware.NewRateLimiter(cfg.RateLimitRPS)
@@ -118,6 +118,16 @@ func main() {
 
 		r.HandleFunc("/chat", proxyHandler.ProxyToAI())
 		r.HandleFunc("/chat/*", proxyHandler.ProxyToAI())
+
+		r.HandleFunc("/copilot", proxyHandler.ProxyToAI())
+		r.HandleFunc("/copilot/*", proxyHandler.ProxyToAI())
+
+		// Notification Service routes
+		r.HandleFunc("/notifications", proxyHandler.ProxyToNotification())
+		r.HandleFunc("/notifications/*", proxyHandler.ProxyToNotification())
+
+		r.HandleFunc("/webhooks", proxyHandler.ProxyToNotification())
+		r.HandleFunc("/webhooks/*", proxyHandler.ProxyToNotification())
 	})
 
 	// Create HTTP server

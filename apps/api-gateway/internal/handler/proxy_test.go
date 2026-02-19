@@ -26,7 +26,7 @@ func TestProxyHandler_Success(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create proxy handler
-	proxyHandler := NewProxyHandler(backend.URL, backend.URL, logger)
+	proxyHandler := NewProxyHandler(backend.URL, backend.URL, backend.URL, logger)
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
@@ -58,7 +58,7 @@ func TestProxyHandler_BackendError(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create proxy handler
-	proxyHandler := NewProxyHandler(backend.URL, backend.URL, logger)
+	proxyHandler := NewProxyHandler(backend.URL, backend.URL, backend.URL, logger)
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
@@ -94,7 +94,7 @@ func TestProxyHandler_HeaderForwarding(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create proxy handler
-	proxyHandler := NewProxyHandler(backend.URL, backend.URL, logger)
+	proxyHandler := NewProxyHandler(backend.URL, backend.URL, backend.URL, logger)
 
 	// Create test request with custom headers
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
@@ -124,7 +124,7 @@ func TestProxyHandler_Timeout(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	// Create proxy handler
-	proxyHandler := NewProxyHandler(backend.URL, backend.URL, logger)
+	proxyHandler := NewProxyHandler(backend.URL, backend.URL, backend.URL, logger)
 
 	// Create test request
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)

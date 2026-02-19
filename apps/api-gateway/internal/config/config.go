@@ -13,8 +13,9 @@ type Config struct {
 	Environment string
 
 	// Service URLs
-	CoreServiceURL string
-	AIServiceURL   string
+	CoreServiceURL         string
+	AIServiceURL           string
+	NotificationServiceURL string
 
 	// Firebase configuration
 	FirebaseProjectID     string
@@ -32,8 +33,9 @@ func Load() *Config {
 	return &Config{
 		Port:                  getEnv("PORT", "8080"),
 		Environment:           getEnv("ENVIRONMENT", "development"),
-		CoreServiceURL:        getEnv("CORE_SERVICE_URL", "http://localhost:8001"),
-		AIServiceURL:          getEnv("AI_SERVICE_URL", "http://localhost:8002"),
+		CoreServiceURL:         getEnv("CORE_SERVICE_URL", "http://localhost:8001"),
+		AIServiceURL:           getEnv("AI_SERVICE_URL", "http://localhost:8002"),
+		NotificationServiceURL: getEnv("NOTIFICATION_SERVICE_URL", "http://localhost:8083"),
 		FirebaseProjectID:     getEnv("FIREBASE_PROJECT_ID", ""),
 		FirebaseCredentials:   getEnv("FIREBASE_CREDENTIALS", ""),
 		RateLimitRPS:          getEnvAsInt("RATE_LIMIT_RPS", 100),

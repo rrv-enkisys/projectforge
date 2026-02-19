@@ -16,18 +16,20 @@ import (
 
 // ProxyHandler handles reverse proxy requests to backend services
 type ProxyHandler struct {
-	client           *http.Client
-	coreServiceURL   string
-	aiServiceURL     string
-	logger           *slog.Logger
-	coreServiceCB    *gobreaker.CircuitBreaker
-	aiServiceCB      *gobreaker.CircuitBreaker
-	maxRetries       int
-	retryBaseDelay   time.Duration
+	client                  *http.Client
+	coreServiceURL          string
+	aiServiceURL            string
+	notificationServiceURL  string
+	logger                  *slog.Logger
+	coreServiceCB           *gobreaker.CircuitBreaker
+	aiServiceCB             *gobreaker.CircuitBreaker
+	notificationServiceCB   *gobreaker.CircuitBreaker
+	maxRetries              int
+	retryBaseDelay          time.Duration
 }
 
 // NewProxyHandler creates a new proxy handler
-func NewProxyHandler(coreServiceURL, aiServiceURL string, logger *slog.Logger) *ProxyHandler {
+func NewProxyHandler(coreServiceURL, aiServiceURL, notificationServiceURL string, logger *slog.Logger) *ProxyHandler {
 	// Circuit breaker settings
 	cbSettings := gobreaker.Settings{
 		Name:        "backend-service",
@@ -53,6 +55,9 @@ func NewProxyHandler(coreServiceURL, aiServiceURL string, logger *slog.Logger) *
 	aiServiceCBSettings := cbSettings
 	aiServiceCBSettings.Name = "ai-service"
 
+	notificationServiceCBSettings := cbSettings
+	notificationServiceCBSettings.Name = "notification-service"
+
 	return &ProxyHandler{
 		client: &http.Client{
 			Timeout: 30 * time.Second,
@@ -60,13 +65,15 @@ func NewProxyHandler(coreServiceURL, aiServiceURL string, logger *slog.Logger) *
 				return http.ErrUseLastResponse // Don't follow redirects
 			},
 		},
-		coreServiceURL: strings.TrimSuffix(coreServiceURL, "/"),
-		aiServiceURL:   strings.TrimSuffix(aiServiceURL, "/"),
-		logger:         logger,
-		coreServiceCB:  gobreaker.NewCircuitBreaker(coreServiceCBSettings),
-		aiServiceCB:    gobreaker.NewCircuitBreaker(aiServiceCBSettings),
-		maxRetries:     3,
-		retryBaseDelay: 100 * time.Millisecond,
+		coreServiceURL:         strings.TrimSuffix(coreServiceURL, "/"),
+		aiServiceURL:           strings.TrimSuffix(aiServiceURL, "/"),
+		notificationServiceURL: strings.TrimSuffix(notificationServiceURL, "/"),
+		logger:                 logger,
+		coreServiceCB:          gobreaker.NewCircuitBreaker(coreServiceCBSettings),
+		aiServiceCB:            gobreaker.NewCircuitBreaker(aiServiceCBSettings),
+		notificationServiceCB:  gobreaker.NewCircuitBreaker(notificationServiceCBSettings),
+		maxRetries:             3,
+		retryBaseDelay:         100 * time.Millisecond,
 	}
 }
 
@@ -220,6 +227,11 @@ func (p *ProxyHandler) ProxyToCore() http.HandlerFunc {
 // ProxyToAI proxies requests to the AI Service
 func (p *ProxyHandler) ProxyToAI() http.HandlerFunc {
 	return p.ProxyTo(p.aiServiceURL, p.aiServiceCB)
+}
+
+// ProxyToNotification proxies requests to the Notification Service
+func (p *ProxyHandler) ProxyToNotification() http.HandlerFunc {
+	return p.ProxyTo(p.notificationServiceURL, p.notificationServiceCB)
 }
 
 // getScheme determines the request scheme (http or https)

@@ -30,7 +30,9 @@ export function useNotifications(unreadOnly = false) {
       const response = await api.get<NotificationListResponse>(NOTIF_BASE, { params })
       return response.data
     },
-    refetchInterval: 30_000, // poll every 30s
+    // Stop polling if the endpoint returns an error (service not yet deployed)
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),
+    retry: false,
   })
 }
 
@@ -41,7 +43,9 @@ export function useUnreadCount() {
       const response = await api.get<{ count: number }>(`${NOTIF_BASE}/unread-count`)
       return response.data.count
     },
-    refetchInterval: 30_000,
+    // Stop polling on error to avoid console spam when service is unavailable
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30_000),
+    retry: false,
   })
 }
 
