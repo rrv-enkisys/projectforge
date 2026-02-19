@@ -19,6 +19,9 @@ class MessageCreate(BaseModel):
 
     session_id: UUID
     content: str = Field(..., min_length=1, max_length=5000)
+    # Optional: client can pass these to enable RAG context
+    project_id: UUID | None = None
+    organization_id: UUID | None = None
 
 
 class MessageResponse(BaseModel):
