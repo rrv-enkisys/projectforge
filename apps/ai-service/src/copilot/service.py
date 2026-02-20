@@ -89,11 +89,15 @@ Provide:
 Keep it concise and actionable.
 """
 
-        ai_insights = await self.vertex_client.generate_text(
-            prompt=insights_prompt,
-            temperature=0.5,
-            max_output_tokens=512
-        )
+        try:
+            ai_insights = await self.vertex_client.generate_text(
+                prompt=insights_prompt,
+                temperature=0.5,
+                max_output_tokens=512
+            )
+        except Exception as e:
+            logger.warning(f"Vertex AI unavailable for project analysis: {e}")
+            ai_insights = f"Health score: {health['score']}/100. Status: {health['status']}. {len(risks)} risks detected."
 
         return {
             "health": health,
@@ -118,11 +122,15 @@ Keep it concise and actionable.
 
         # Enhance with AI analysis
         prompt = build_risk_analysis_prompt(project_data)
-        ai_analysis = await self.vertex_client.generate_text(
-            prompt=prompt,
-            temperature=0.4,
-            max_output_tokens=1024
-        )
+        try:
+            ai_analysis = await self.vertex_client.generate_text(
+                prompt=prompt,
+                temperature=0.4,
+                max_output_tokens=1024
+            )
+        except Exception as e:
+            logger.warning(f"Vertex AI unavailable for risk analysis: {e}")
+            ai_analysis = f"{len(detected_risks)} risks detected by automated analysis."
 
         return {
             "detected_risks": detected_risks,
@@ -152,11 +160,15 @@ Format each as: Category, Action, Expected Impact
 Be practical and specific to the project data.
 """
 
-        response = await self.vertex_client.generate_text(
-            prompt=prompt,
-            temperature=0.6,
-            max_output_tokens=800
-        )
+        try:
+            response = await self.vertex_client.generate_text(
+                prompt=prompt,
+                temperature=0.6,
+                max_output_tokens=800
+            )
+        except Exception as e:
+            logger.warning(f"Vertex AI unavailable for suggestions: {e}")
+            response = "Review task priorities\nCheck milestone deadlines\nUpdate resource assignments\nMonitor budget utilization\nImprove team communication"
 
         # Parse AI response into structured suggestions
         # In a real implementation, you'd use more sophisticated parsing
@@ -193,11 +205,15 @@ Be practical and specific to the project data.
         # Enhance with AI if historical data available
         if historical_data:
             prompt = build_timeline_prediction_prompt(project_data, historical_data)
-            ai_prediction = await self.vertex_client.generate_text(
-                prompt=prompt,
-                temperature=0.3,
-                max_output_tokens=512
-            )
+            try:
+                ai_prediction = await self.vertex_client.generate_text(
+                    prompt=prompt,
+                    temperature=0.3,
+                    max_output_tokens=512
+                )
+            except Exception as e:
+                logger.warning(f"Vertex AI unavailable for timeline prediction: {e}")
+                ai_prediction = "Timeline prediction based on automated analysis only."
 
             return {
                 **base_prediction,
