@@ -1,0 +1,34 @@
+project_id  = "projectforge-4314f"
+region      = "us-central1"
+environment = "staging"
+domain_name = "staging.projectforge.app"
+
+firebase_project_id = "projectforge-4314f"
+db_tier             = "db-g1-small"
+
+api_gateway_cpu    = "1"
+api_gateway_memory = "512Mi"
+api_gateway_min    = 1
+api_gateway_max    = 5
+
+core_service_cpu    = "1"
+core_service_memory = "1Gi"
+core_service_min    = 1
+core_service_max    = 5
+
+ai_service_cpu    = "2"
+ai_service_memory = "2Gi"
+ai_service_min    = 1
+ai_service_max    = 3
+
+notification_cpu    = "0.5"
+notification_memory = "256Mi"
+notification_min    = 1
+notification_max    = 3
+
+# Put secrets in secrets.tfvars (never commit)
+# database_url         = "..."
+# firebase_credentials = "..."
+# resend_api_key       = "..."
+# slack_bot_token      = "..."
+# db_password          = "..."

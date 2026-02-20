@@ -1,0 +1,34 @@
+project_id  = "projectforge-4314f"
+region      = "us-central1"
+environment = "prod"
+domain_name = "app.projectforge.app"
+
+firebase_project_id = "projectforge-4314f"
+db_tier             = "db-custom-2-4096"
+
+api_gateway_cpu    = "2"
+api_gateway_memory = "1Gi"
+api_gateway_min    = 2
+api_gateway_max    = 10
+
+core_service_cpu    = "2"
+core_service_memory = "2Gi"
+core_service_min    = 2
+core_service_max    = 10
+
+ai_service_cpu    = "4"
+ai_service_memory = "4Gi"
+ai_service_min    = 1
+ai_service_max    = 5
+
+notification_cpu    = "1"
+notification_memory = "512Mi"
+notification_min    = 1
+notification_max    = 3
+
+# Put secrets in secrets.tfvars (never commit)
+# database_url         = "..."
+# firebase_credentials = "..."
+# resend_api_key       = "..."
+# slack_bot_token      = "..."
+# db_password          = "..."

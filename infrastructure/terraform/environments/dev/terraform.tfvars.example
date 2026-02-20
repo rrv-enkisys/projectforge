@@ -1,0 +1,47 @@
+# ─── terraform.tfvars.example ─────────────────────────────────────────────────
+# Copy to terraform.tfvars and fill in values.
+# For secret values, prefer using TF_VAR_* environment variables or a
+# separate secrets.tfvars file that is listed in .gitignore.
+#
+# Usage:
+#   cp terraform.tfvars.example terraform.tfvars
+#   terraform plan -var-file=secrets.tfvars
+# ──────────────────────────────────────────────────────────────────────────────
+
+project_id  = "projectforge-4314f"
+region      = "us-central1"
+environment = "dev"
+domain_name = "dev.projectforge.app"
+
+firebase_project_id = "projectforge-4314f"
+
+# Cloud SQL
+db_tier = "db-f1-micro"
+
+# Cloud Run — dev sizing (minimal cost)
+api_gateway_cpu    = "1"
+api_gateway_memory = "512Mi"
+api_gateway_min    = 1
+api_gateway_max    = 3
+
+core_service_cpu    = "1"
+core_service_memory = "1Gi"
+core_service_min    = 1
+core_service_max    = 3
+
+ai_service_cpu    = "2"
+ai_service_memory = "2Gi"
+ai_service_min    = 0 # scales to zero in dev
+ai_service_max    = 2
+
+notification_cpu    = "0.5"
+notification_memory = "256Mi"
+notification_min    = 0 # scales to zero in dev
+notification_max    = 2
+
+# ─── Secrets (put these in secrets.tfvars, NOT here) ─────────────────────────
+# database_url         = "postgresql+asyncpg://app:PASSWORD@CLOUD_SQL_PRIVATE_IP/projectforge"
+# firebase_credentials = "<base64-encoded service account JSON>"
+# resend_api_key       = "re_xxxxxxxxxxxx"
+# slack_bot_token      = "xoxb-xxxxxxxxxxxx"
+# db_password          = "your-strong-password"

@@ -59,6 +59,8 @@ Thumbs.db
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+secrets.tfvars
+terraform.tfvars
 
 # Go
 *.exe
