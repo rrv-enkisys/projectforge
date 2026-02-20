@@ -8,7 +8,9 @@ resource "random_password" "secret_key" {
 resource "google_secret_manager_secret" "database_url" {
   secret_id = "database-url-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "database_url" {
@@ -19,7 +21,9 @@ resource "google_secret_manager_secret_version" "database_url" {
 resource "google_secret_manager_secret" "firebase_project_id" {
   secret_id = "firebase-project-id-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "firebase_project_id" {
@@ -30,7 +34,9 @@ resource "google_secret_manager_secret_version" "firebase_project_id" {
 resource "google_secret_manager_secret" "firebase_credentials" {
   secret_id = "firebase-credentials-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "firebase_credentials" {
@@ -41,7 +47,9 @@ resource "google_secret_manager_secret_version" "firebase_credentials" {
 resource "google_secret_manager_secret" "secret_key" {
   secret_id = "secret-key-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "secret_key" {
@@ -52,7 +60,9 @@ resource "google_secret_manager_secret_version" "secret_key" {
 resource "google_secret_manager_secret" "resend_api_key" {
   secret_id = "resend-api-key-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "resend_api_key" {
@@ -63,7 +73,9 @@ resource "google_secret_manager_secret_version" "resend_api_key" {
 resource "google_secret_manager_secret" "slack_bot_token" {
   secret_id = "slack-bot-token-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "slack_bot_token" {
@@ -74,7 +86,9 @@ resource "google_secret_manager_secret_version" "slack_bot_token" {
 resource "google_secret_manager_secret" "cloud_sql_password" {
   secret_id = "cloud-sql-password-${var.environment}"
   project   = var.project_id
-  replication { auto {} }
+  replication {
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret_version" "cloud_sql_password" {

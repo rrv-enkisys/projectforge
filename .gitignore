@@ -58,7 +58,7 @@ Thumbs.db
 *.tfstate
 *.tfstate.*
 .terraform/
-.terraform.lock.hcl
+# .terraform.lock.hcl should be committed (reproducible provider versions)
 secrets.tfvars
 terraform.tfvars
 
