@@ -21,11 +21,12 @@ class Document(Base):
     __tablename__ = "documents"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    project_id: Mapped[UUID] = mapped_column(index=True)  # FK to projects managed by core-service
     organization_id: Mapped[UUID] = mapped_column(index=True)
 
     name: Mapped[str] = mapped_column(String(255))
-    file_path: Mapped[str] = mapped_column(String(500))  # GCS path
+    uploaded_by: Mapped[UUID] = mapped_column(index=True)  # FK to users managed by core-service
+    file_path: Mapped[str] = mapped_column(String(500))  # GCS path or local path
     file_type: Mapped[str] = mapped_column(String(50))
     file_size: Mapped[int] = mapped_column(Integer)
 
@@ -54,14 +55,14 @@ class DocumentChunk(Base):
     __tablename__ = "document_chunks"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    document_id: Mapped[UUID] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"))
+    document_id: Mapped[UUID] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"), index=True)
+    organization_id: Mapped[UUID] = mapped_column(index=True)
 
     content: Mapped[str] = mapped_column(Text)
-    chunk_index: Mapped[int] = mapped_column(Integer)  # Order within document
-    token_count: Mapped[int] = mapped_column(Integer)
+    chunk_index: Mapped[int] = mapped_column(Integer)
 
-    # Vector embedding (768 dimensions for textembedding-gecko@004)
-    embedding: Mapped[list[float]] = mapped_column(Vector(768))
+    # Vector embedding (768 dimensions for text-embedding-004)
+    embedding: Mapped[list[float]] = mapped_column(Vector(768), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

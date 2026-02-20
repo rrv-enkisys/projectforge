@@ -34,8 +34,10 @@ export function useChatSessions() {
   return useQuery({
     queryKey: ['chat-sessions'],
     queryFn: async () => {
-      const response = await api.get<ChatSessionListResponse>('/api/v1/chat/sessions')
-      return response.data
+      const response = await api.get<ChatSession[] | ChatSessionListResponse>('/api/v1/chat/sessions')
+      const raw = response.data
+      const data = Array.isArray(raw) ? raw : raw.data
+      return { data, total: data.length } as ChatSessionListResponse
     },
   })
 }
@@ -44,8 +46,10 @@ export function useChatMessages(sessionId: string | null) {
   return useQuery({
     queryKey: ['chat-messages', sessionId],
     queryFn: async () => {
-      const response = await api.get<ChatMessageListResponse>(`/api/v1/chat/sessions/${sessionId}/messages`)
-      return response.data
+      const response = await api.get<ChatMessage[] | ChatMessageListResponse>(`/api/v1/chat/sessions/${sessionId}/messages`)
+      const raw = response.data
+      const data = Array.isArray(raw) ? raw : raw.data
+      return { data, total: data.length } as ChatMessageListResponse
     },
     enabled: !!sessionId,
   })

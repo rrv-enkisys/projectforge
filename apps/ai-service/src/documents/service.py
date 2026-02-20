@@ -8,10 +8,11 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
+from sqlalchemy import text
+
 from .models import Document
 from .processor import get_document_processor
 from .repository import DocumentRepository
-from .schemas import DocumentUpload
 
 
 class DocumentService:
@@ -22,6 +23,14 @@ class DocumentService:
         self.repository = DocumentRepository(db)
         self.processor = get_document_processor(db)
 
+    async def get_default_user_id(self, organization_id: UUID) -> UUID:
+        """Get the first user in the system as a fallback uploaded_by for dev mode."""
+        result = await self.db.execute(text("SELECT id FROM users LIMIT 1"))
+        row = result.fetchone()
+        if row:
+            return row[0]
+        raise ValueError("No users found in the system")
+
     async def upload_and_process_document(
         self,
         file: BinaryIO,
@@ -30,8 +39,11 @@ class DocumentService:
         file_size: int,
         project_id: UUID,
         organization_id: UUID,
+        uploaded_by: UUID | None = None,
     ) -> Document:
         """Upload and process a new document."""
+        if uploaded_by is None:
+            uploaded_by = await self.get_default_user_id(organization_id)
         # Create document record
         document_id = uuid4()
         document = Document(
@@ -43,6 +55,7 @@ class DocumentService:
             file_type=file_type,
             file_size=file_size,
             status="pending",
+            uploaded_by=uploaded_by,
         )
         self.db.add(document)
         await self.db.commit()

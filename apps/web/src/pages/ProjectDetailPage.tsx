@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Trash2, Upload, FileText, Loader2, CheckCircle, AlertCircle,
-  Clock, MoreVertical, Plus,
+  Clock, MoreVertical, Plus, LayoutList, LayoutGrid,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -13,6 +13,7 @@ import { useProject } from '@/features/projects/hooks/useProjects'
 import { useTasks, useDeleteTask } from '@/features/tasks/hooks/useTasks'
 import { useDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { TaskFormDialog } from '@/features/tasks/components/TaskFormDialog'
+import { KanbanBoard } from '@/features/tasks/components/KanbanBoard'
 import { CopilotPanel } from '@/features/ai/components/CopilotPanel'
 import { ChatPanel } from '@/features/ai/components/ChatPanel'
 import { cn } from '@/lib/utils'
@@ -58,6 +59,7 @@ function formatBytes(bytes: number) {
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState('overview')
+  const [taskView, setTaskView] = useState<'list' | 'kanban'>('list')
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -231,7 +233,25 @@ export default function ProjectDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-500">{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
-                <TaskFormDialog defaultProjectId={id} />
+                <div className="flex items-center gap-2">
+                  <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                    <button
+                      onClick={() => setTaskView('list')}
+                      className={cn('rounded-md p-1.5 transition-colors', taskView === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
+                      title="List view"
+                    >
+                      <LayoutList className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setTaskView('kanban')}
+                      className={cn('rounded-md p-1.5 transition-colors', taskView === 'kanban' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
+                      title="Kanban view"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <TaskFormDialog defaultProjectId={id} />
+                </div>
               </div>
 
               {tasks.length === 0 ? (
@@ -246,6 +266,8 @@ export default function ProjectDetailPage() {
                     } />
                   </CardContent>
                 </Card>
+              ) : taskView === 'kanban' ? (
+                <KanbanBoard tasks={tasks} />
               ) : (
                 <div className="space-y-2">
                   {tasks.map((task) => (
@@ -349,8 +371,11 @@ export default function ProjectDetailPage() {
                             <div className="flex items-center gap-2 mt-0.5">
                               {docStatusIcon[doc.status]}
                               <span className="text-xs text-slate-500">{formatBytes(doc.file_size)}</span>
-                              {doc.chunk_count > 0 && (
-                                <span className="text-xs text-slate-400">· {doc.chunk_count} chunks indexed</span>
+                              {doc.status === 'processed' && (
+                                <span className="text-xs text-green-600">· indexed</span>
+                              )}
+                              {doc.error_message && (
+                                <span className="text-xs text-red-500 truncate max-w-[160px]" title={doc.error_message}>· {doc.error_message}</span>
                               )}
                             </div>
                           </div>

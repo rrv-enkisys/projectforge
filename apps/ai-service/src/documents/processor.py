@@ -99,14 +99,14 @@ class DocumentProcessor:
 
             # Step 5: Store chunks with embeddings
             document_chunks = []
-            for idx, ((chunk_text, token_count), embedding) in enumerate(
+            for idx, ((chunk_text, _token_count), embedding) in enumerate(
                 zip(chunks, embeddings)
             ):
                 chunk = DocumentChunk(
                     document_id=document_id,
+                    organization_id=organization_id,
                     content=chunk_text,
                     chunk_index=idx,
-                    token_count=token_count,
                     embedding=embedding,
                 )
                 document_chunks.append(chunk)

@@ -1,9 +1,10 @@
 """Document API endpoints"""
+import io
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
 
-from .schemas import DocumentListResponse, DocumentResponse, DocumentUpload, DocumentWithChunks
+from .schemas import DocumentListResponse, DocumentResponse, DocumentWithChunks
 from .service import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["documents"], redirect_slashes=False)
@@ -34,15 +35,33 @@ async def list_documents(
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
-    data: DocumentUpload,
+    file: UploadFile = File(...),
+    project_id: UUID = Form(...),
+    name: str | None = Form(None),
     service: DocumentService = Depends(),
-    x_organization_id: UUID = Header(..., alias="X-Organization-ID")
+    x_organization_id: UUID = Header(..., alias="X-Organization-ID"),
+    x_user_id: str = Header(default="", alias="X-User-ID"),
 ) -> DocumentResponse:
-    """
-    Upload a new document for processing.
-    Document will be chunked and embedded asynchronously.
-    """
-    document = await service.create_document(data, x_organization_id)
+    """Upload a new document. Will be chunked and embedded asynchronously."""
+    content = await file.read()
+    file_name = name or file.filename or "document"
+    file_type = file.content_type or "application/octet-stream"
+
+    # Resolve uploaded_by: use X-User-ID if it's a valid UUID, else fall back to org's first user
+    try:
+        uploaded_by = UUID(x_user_id)
+    except (ValueError, AttributeError):
+        uploaded_by = await service.get_default_user_id(x_organization_id)
+
+    document = await service.upload_and_process_document(
+        file=io.BytesIO(content),
+        file_name=file_name,
+        file_type=file_type,
+        file_size=len(content),
+        project_id=project_id,
+        organization_id=x_organization_id,
+        uploaded_by=uploaded_by,
+    )
     return DocumentResponse.model_validate(document)
 
 
