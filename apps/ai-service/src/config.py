@@ -20,10 +20,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/projectforge"
 
     # Vertex AI
-    gcp_project_id: str = "your-project-id"
+    gcp_project_id: str = "projectforge-4314f"
     gcp_location: str = "us-central1"
-    vertex_embedding_model: str = "textembedding-gecko@004"
-    vertex_llm_model: str = "gemini-1.5-pro"
+    vertex_embedding_model: str = "text-embedding-004"
+    vertex_llm_model: str = "gemini-2.0-flash-exp"
     embedding_dimensions: int = 768
 
     # Document Processing

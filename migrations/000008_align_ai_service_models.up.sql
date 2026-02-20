@@ -38,3 +38,14 @@ ALTER TABLE chat_sessions ALTER COLUMN user_id SET NOT NULL;
 
 -- Step 3: recreate index
 CREATE INDEX idx_chat_sessions_user_id ON chat_sessions(user_id);
+
+-- ===== Chat messages table alignment =====
+
+-- Convert role from chat_role enum to VARCHAR so the Python model (String) can insert directly
+ALTER TABLE chat_messages ALTER COLUMN role TYPE VARCHAR(20);
+
+-- Make organization_id nullable in chat_messages (redundant - derivable from session)
+ALTER TABLE chat_messages ALTER COLUMN organization_id DROP NOT NULL;
+
+-- Make chat_sessions.project_id nullable (sessions can exist without a project)
+ALTER TABLE chat_sessions ALTER COLUMN project_id DROP NOT NULL;

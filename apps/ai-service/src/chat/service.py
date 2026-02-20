@@ -233,12 +233,20 @@ class ChatService:
 
         prompt = "\n\n".join(parts)
 
-        # Generate response
-        response = await self.vertex_client.generate_text(
-            prompt=prompt,
-            temperature=0.7,
-            max_output_tokens=1024,
-        )
+        # Generate response (graceful fallback if Vertex AI unavailable)
+        try:
+            response = await self.vertex_client.generate_text(
+                prompt=prompt,
+                temperature=0.7,
+                max_output_tokens=1024,
+            )
+        except Exception as e:
+            logger.warning(f"Vertex AI unavailable, using fallback response: {e}")
+            response = (
+                "⚠️ AI service is running in development mode without Vertex AI credentials. "
+                "To enable real AI responses, configure GCP credentials with Vertex AI access.\n\n"
+                f"Your message was: *{user_message}*"
+            )
 
         # Store user message and assistant response
         await self.add_message(session_id, "user", user_message)
