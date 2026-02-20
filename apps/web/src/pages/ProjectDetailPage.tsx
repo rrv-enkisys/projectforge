@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Trash2, Upload, FileText, Loader2, CheckCircle, AlertCircle,
-  Clock, MoreVertical, Plus, LayoutList, LayoutGrid,
+  Clock, MoreVertical, Plus, LayoutList, LayoutGrid, GanttChart as GanttIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -14,6 +14,7 @@ import { useTasks, useDeleteTask } from '@/features/tasks/hooks/useTasks'
 import { useDocuments, useUploadDocument, useDeleteDocument } from '@/features/documents/hooks/useDocuments'
 import { TaskFormDialog } from '@/features/tasks/components/TaskFormDialog'
 import { KanbanBoard } from '@/features/tasks/components/KanbanBoard'
+import { GanttWrapper } from '@/features/projects/components/GanttWrapper'
 import { CopilotPanel } from '@/features/ai/components/CopilotPanel'
 import { ChatPanel } from '@/features/ai/components/ChatPanel'
 import { cn } from '@/lib/utils'
@@ -59,7 +60,8 @@ function formatBytes(bytes: number) {
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState('overview')
-  const [taskView, setTaskView] = useState<'list' | 'kanban'>('list')
+  const [taskView, setTaskView] = useState<'list' | 'kanban' | 'gantt'>('list')
+  const [ganttSelectedTask, setGanttSelectedTask] = useState<Task | null>(null)
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -249,6 +251,13 @@ export default function ProjectDetailPage() {
                     >
                       <LayoutGrid className="h-4 w-4" />
                     </button>
+                    <button
+                      onClick={() => setTaskView('gantt')}
+                      className={cn('rounded-md p-1.5 transition-colors', taskView === 'gantt' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700')}
+                      title="Gantt view"
+                    >
+                      <GanttIcon className="h-4 w-4" />
+                    </button>
                   </div>
                   <TaskFormDialog defaultProjectId={id} />
                 </div>
@@ -268,6 +277,21 @@ export default function ProjectDetailPage() {
                 </Card>
               ) : taskView === 'kanban' ? (
                 <KanbanBoard tasks={tasks} />
+              ) : taskView === 'gantt' ? (
+                <>
+                  <GanttWrapper
+                    projectId={id!}
+                    tasks={tasks}
+                    onEditTask={(task) => setGanttSelectedTask(task)}
+                  />
+                  {ganttSelectedTask && (
+                    <TaskFormDialog
+                      task={ganttSelectedTask}
+                      open={!!ganttSelectedTask}
+                      onOpenChange={(open) => { if (!open) setGanttSelectedTask(null) }}
+                    />
+                  )}
+                </>
               ) : (
                 <div className="space-y-2">
                   {tasks.map((task) => (

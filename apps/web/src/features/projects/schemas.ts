@@ -10,7 +10,7 @@ export const projectSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
     .nullable()
     .optional(),
-  status: z.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']).default('planning'),
+  status: z.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   budget: z.number().positive('Budget must be positive').nullable().optional(),
 })
 

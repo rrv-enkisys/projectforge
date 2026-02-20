@@ -1,0 +1,79 @@
+/* frappe-gantt theme overrides for ProjectForge */
+
+.gantt-container {
+  background: white;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+/* Default bar color */
+.gantt .bar-group .bar {
+  fill: #3b82f6; /* blue-500 */
+}
+
+.gantt .bar-group .bar-progress {
+  fill: #1d4ed8; /* blue-700 */
+}
+
+/* Priority-based colors via custom_class */
+.gantt .bar-group.priority-critical .bar { fill: #ef4444; } /* red-500 */
+.gantt .bar-group.priority-critical .bar-progress { fill: #b91c1c; }
+
+.gantt .bar-group.priority-high .bar { fill: #f97316; } /* orange-500 */
+.gantt .bar-group.priority-high .bar-progress { fill: #c2410c; }
+
+.gantt .bar-group.priority-medium .bar { fill: #3b82f6; } /* blue-500 */
+.gantt .bar-group.priority-medium .bar-progress { fill: #1d4ed8; }
+
+.gantt .bar-group.priority-low .bar { fill: #94a3b8; } /* slate-400 */
+.gantt .bar-group.priority-low .bar-progress { fill: #64748b; }
+
+/* Milestone bars */
+.gantt .bar-group.milestone-bar .bar {
+  fill: #8b5cf6; /* violet-500 */
+}
+.gantt .bar-group.milestone-bar .bar-progress {
+  fill: #6d28d9; /* violet-700 */
+}
+
+/* Text inside bars */
+.gantt .bar-label {
+  font-family: inherit;
+  font-size: 12px;
+  fill: #ffffff;
+}
+
+/* Grid header */
+.gantt .grid-header {
+  fill: #f8fafc; /* slate-50 */
+}
+
+/* Today marker */
+.gantt .today-highlight {
+  fill: #eff6ff; /* blue-50 */
+  opacity: 0.5;
+}
+
+/* Row alternating */
+.gantt .grid-row:nth-child(even) {
+  fill: #f8fafc; /* slate-50 */
+}
+
+/* Tick lines */
+.gantt .tick {
+  stroke: #e2e8f0; /* slate-200 */
+}
+
+/* Lower text (dates) */
+.gantt .lower-text,
+.gantt .upper-text {
+  fill: #64748b; /* slate-500 */
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* Cursor when hovering bars */
+.gantt .bar-wrapper {
+  cursor: pointer;
+}

@@ -134,7 +134,7 @@ export default function DocumentsPage() {
                         <span className="text-xs text-slate-600">{statusLabel[doc.status]}</span>
                         <span className="text-xs text-slate-400">·</span>
                         <span className="text-xs text-slate-400">{formatBytes(doc.file_size)}</span>
-                        {doc.chunk_count > 0 && (
+                        {(doc.chunk_count ?? 0) > 0 && (
                           <>
                             <span className="text-xs text-slate-400">·</span>
                             <span className="text-xs text-slate-400">{doc.chunk_count} chunks</span>

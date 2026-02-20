@@ -56,7 +56,7 @@ export function ProjectForm({ project, onSubmit, isSubmitting }: ProjectFormProp
         start_date: project.start_date || '',
         end_date: project.end_date || '',
         status: project.status,
-        budget: project.budget || '',
+        budget: project.budget ?? null,
       })
     }
   }, [project, form])

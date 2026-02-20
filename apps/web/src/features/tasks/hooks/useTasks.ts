@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { api } from '@/lib/api'
 
 export interface Task {
@@ -92,6 +93,38 @@ export function useDeleteTask() {
       await api.delete(`/api/v1/tasks/${id}`)
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    },
+  })
+}
+
+export function useUpdateTaskStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: Task['status'] }) => {
+      const response = await api.patch<Task>(`/api/v1/tasks/${id}`, { status })
+      return response.data
+    },
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks'] })
+      const previousData = queryClient.getQueriesData<TaskListResponse>({ queryKey: ['tasks'] })
+      queryClient.setQueriesData<TaskListResponse>({ queryKey: ['tasks'] }, (old) => {
+        if (!old) return old
+        return { ...old, data: old.data.map((t) => (t.id === id ? { ...t, status } : t)) }
+      })
+      return { previousData }
+    },
+    onError: (_err, _vars, context) => {
+      context?.previousData.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data)
+      })
+      toast.error('Failed to move task. Please try again.')
+    },
+    onSuccess: () => {
+      toast.success('Task moved.')
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
     },
   })

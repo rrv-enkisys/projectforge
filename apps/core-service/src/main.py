@@ -38,6 +38,9 @@ from .milestones.router import router as milestones_router
 from .organizations.router import router as organizations_router
 from .projects.router import router as projects_router
 from .tasks.router import router as tasks_router
+from .tasks.dependencies_router import router as task_dependencies_router
+from .tasks.assignments_router import router as task_assignments_router
+from .tasks.comments_router import router as task_comments_router
 from .users.router import router as users_router
 
 
@@ -148,6 +151,9 @@ app.include_router(users_router, prefix=settings.api_prefix)
 app.include_router(projects_router, prefix=settings.api_prefix)
 app.include_router(milestones_router, prefix=settings.api_prefix)
 app.include_router(tasks_router, prefix=settings.api_prefix)
+app.include_router(task_dependencies_router, prefix=settings.api_prefix)
+app.include_router(task_assignments_router, prefix=settings.api_prefix)
+app.include_router(task_comments_router, prefix=settings.api_prefix)
 app.include_router(dashboard_router, prefix=settings.api_prefix)
 
 

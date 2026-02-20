@@ -6,9 +6,11 @@ export interface Document {
   project_id: string
   organization_id: string
   name: string
+  file_name: string
   file_path: string
   file_type: string
   file_size: number
+  chunk_count?: number
   status: 'pending' | 'processing' | 'processed' | 'failed'
   error_message: string | null
   created_at: string

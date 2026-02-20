@@ -5,7 +5,7 @@ export const milestoneSchema = z.object({
   description: z.string().optional(),
   project_id: z.string().uuid('Invalid project ID'),
   target_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format').optional(),
-  status: z.enum(['planning', 'active', 'on_hold', 'completed', 'archived']).default('planning'),
+  status: z.enum(['planning', 'active', 'on_hold', 'completed', 'archived']),
 })
 
 export type MilestoneFormData = z.infer<typeof milestoneSchema>
