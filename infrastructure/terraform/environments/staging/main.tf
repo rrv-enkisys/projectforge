@@ -130,7 +130,6 @@ module "core_service" {
   vpc_connector_id      = module.vpc.vpc_connector_id
   allow_public          = false
   env_vars = {
-    PORT                = "8081"
     ENV                 = local.environment
     DEBUG               = "false"
     CORS_ORIGINS        = "https://${var.domain_name}"
@@ -159,7 +158,6 @@ module "ai_service" {
   vpc_connector_id      = module.vpc.vpc_connector_id
   allow_public          = false
   env_vars = {
-    PORT                   = "8082"
     environment            = local.environment
     gcp_project_id         = local.project_id
     gcp_location           = local.region
@@ -188,7 +186,6 @@ module "notification_service" {
   vpc_connector_id      = module.vpc.vpc_connector_id
   allow_public          = false
   env_vars = {
-    PORT        = "8083"
     ENVIRONMENT = local.environment
   }
   secret_env_vars = [
@@ -214,7 +211,6 @@ module "api_gateway" {
   allow_public          = false
   env_vars = {
     ENVIRONMENT              = local.environment
-    PORT                     = "8080"
     CORE_SERVICE_URL         = module.core_service.service_url
     AI_SERVICE_URL           = module.ai_service.service_url
     NOTIFICATION_SERVICE_URL = module.notification_service.service_url

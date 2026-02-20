@@ -44,8 +44,9 @@ resource "google_storage_bucket" "frontend" {
     not_found_page   = "index.html"
   }
 
-  # uniform_bucket_level_access must be false to allow public ACLs via allUsers
-  uniform_bucket_level_access = false
+  # uniform_bucket_level_access = true required by org policy
+  # Public access is granted via IAM binding (allUsers objectViewer) below
+  uniform_bucket_level_access = true
 
   cors {
     origin          = ["*"]
