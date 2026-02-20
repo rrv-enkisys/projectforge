@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     gcp_project_id: str = "projectforge-4314f"
     gcp_location: str = "us-central1"
     vertex_embedding_model: str = "text-embedding-004"
-    vertex_llm_model: str = "gemini-2.0-flash-exp"
+    vertex_llm_model: str = "gemini-2.0-flash"
     embedding_dimensions: int = 768
 
     # Document Processing
