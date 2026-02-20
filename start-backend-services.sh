@@ -84,6 +84,12 @@ tmux send-keys -t projectforge-backend:3 "export FIREBASE_PROJECT_ID=\"$FIREBASE
 tmux send-keys -t projectforge-backend:3 "export ENVIRONMENT=\"development\"" C-m
 tmux send-keys -t projectforge-backend:3 "go run cmd/server/main.go 2>&1 | tee /tmp/gateway.log" C-m
 
+# Window 4: Frontend (React/Vite)
+echo "  [4] Frontend        → puerto 3000"
+tmux new-window -t projectforge-backend:4 -n frontend
+tmux send-keys -t projectforge-backend:4 "cd $PROJECTFORGE_DIR/apps/web" C-m
+tmux send-keys -t projectforge-backend:4 "pnpm dev 2>&1 | tee /tmp/frontend.log" C-m
+
 # Select first window
 tmux select-window -t projectforge-backend:0
 
@@ -92,14 +98,15 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ Servicios iniciados en tmux 'projectforge-backend'"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "  Puertos:  8000 (core)  8001 (ai)  8080 (gateway)  8083 (notifications)"
+echo "  Puertos:  3000 (web)  8000 (core)  8001 (ai)  8080 (gateway)  8083 (notifications)"
 echo ""
 echo "  Comandos tmux:"
-echo "    tmux attach -t projectforge-backend   # entrar"
-echo "    Ctrl+B + 0/1/2/3                      # cambiar ventana"
-echo "    Ctrl+B + d                            # salir sin cerrar"
+echo "    tmux attach -t projectforge-backend     # entrar"
+echo "    Ctrl+B + 0/1/2/3/4                      # cambiar ventana"
+echo "    Ctrl+B + d                              # salir sin cerrar"
 echo ""
 echo "  Logs en tiempo real:"
+echo "    tail -f /tmp/frontend.log"
 echo "    tail -f /tmp/core-service.log"
 echo "    tail -f /tmp/ai-service.log"
 echo "    tail -f /tmp/notification-service.log"
@@ -109,5 +116,5 @@ echo "  Verificar estado:"
 echo "    $PROJECTFORGE_DIR/check-status.sh"
 echo ""
 echo "  ⏳ Espera ~15 segundos para que todos inicien."
-echo "     Luego prueba: curl http://localhost:8080/health"
+echo "     Luego abre: http://34.45.186.91:3000/"
 echo ""
