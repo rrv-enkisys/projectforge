@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Chat service for conversation management"""
 import logging
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import Depends
@@ -9,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from ..copilot.project_data import ProjectDataRepository
 from ..database import get_db
 from ..documents.repository import DocumentRepository
 from ..embeddings.service import EmbeddingService
@@ -34,6 +36,7 @@ class ChatService:
         self.db = db
         self.vertex_client = vertex_client
         self.embedding_service = EmbeddingService(vertex_client)
+        self.project_data_repo = ProjectDataRepository(db)
 
     async def create_session(
         self,
@@ -202,6 +205,54 @@ class ChatService:
         # Get conversation history
         history = await self.get_conversation_history(session_id)
 
+        # Build project context from live DB data
+        project_context = ""
+        if project_id and organization_id:
+            try:
+                project_data = await self.project_data_repo.get_project_data(
+                    project_id=project_id,
+                    organization_id=organization_id,
+                )
+
+                tasks = project_data.get("tasks", [])
+                milestones = project_data.get("milestones", [])
+                today = datetime.now().date()
+
+                overdue_tasks = [
+                    t for t in tasks
+                    if t.get("due_date") and t["due_date"] < str(today)
+                    and t.get("status") not in ("done", "completed")
+                ]
+                in_progress = [t for t in tasks if t.get("status") == "in_progress"]
+                completed = [t for t in tasks if t.get("status") in ("done", "completed")]
+
+                project_context = f"""
+PROJECT CONTEXT (use this to answer questions about this project):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Project: {project_data.get('name', 'Unknown')}
+Status: {project_data.get('status', 'Unknown')}
+Timeline: {project_data.get('start_date', '?')} → {project_data.get('end_date', '?')}
+
+TASKS SUMMARY:
+- Total: {len(tasks)}
+- Completed: {len(completed)}
+- In Progress: {len(in_progress)}
+- Overdue: {len(overdue_tasks)}
+
+OVERDUE TASKS:
+{chr(10).join([f"  • {t['title']} (due: {t['due_date']})" for t in overdue_tasks[:5]]) or '  None'}
+
+IN PROGRESS:
+{chr(10).join([f"  • {t['title']}" for t in in_progress[:5]]) or '  None'}
+
+MILESTONES:
+{chr(10).join([f"  • {m['title']} - {m['status']} (target: {m['target_date']})" for m in milestones]) or '  None'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+            except Exception as e:
+                logger.warning(f"Failed to load project context: {e}")
+                project_context = ""
+
         # Retrieve RAG context if project context is available
         rag_context = ""
         if project_id and organization_id:
@@ -210,10 +261,12 @@ class ChatService:
             )
 
         # Build prompt parts
-        parts: list[str] = [
-            "You are an AI assistant helping with project management. "
-            "Be concise, practical, and helpful.",
-        ]
+        system_prompt = f"""You are an AI assistant for ProjectForge, a project management platform.
+{project_context}
+Be concise, practical, and helpful. When asked about tasks, milestones, or project status, \
+use the PROJECT CONTEXT above to give accurate answers.
+"""
+        parts: list[str] = [system_prompt]
 
         # Include RAG context if available
         if rag_context:
@@ -273,16 +326,62 @@ class ChatService:
         """
         history = await self.get_conversation_history(session_id)
 
+        project_context = ""
+        if project_id and organization_id:
+            try:
+                project_data = await self.project_data_repo.get_project_data(
+                    project_id=project_id,
+                    organization_id=organization_id,
+                )
+                tasks = project_data.get("tasks", [])
+                milestones = project_data.get("milestones", [])
+                today = datetime.now().date()
+                overdue_tasks = [
+                    t for t in tasks
+                    if t.get("due_date") and t["due_date"] < str(today)
+                    and t.get("status") not in ("done", "completed")
+                ]
+                in_progress = [t for t in tasks if t.get("status") == "in_progress"]
+                completed = [t for t in tasks if t.get("status") in ("done", "completed")]
+                project_context = f"""
+PROJECT CONTEXT (use this to answer questions about this project):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Project: {project_data.get('name', 'Unknown')}
+Status: {project_data.get('status', 'Unknown')}
+Timeline: {project_data.get('start_date', '?')} → {project_data.get('end_date', '?')}
+
+TASKS SUMMARY:
+- Total: {len(tasks)}
+- Completed: {len(completed)}
+- In Progress: {len(in_progress)}
+- Overdue: {len(overdue_tasks)}
+
+OVERDUE TASKS:
+{chr(10).join([f"  • {t['title']} (due: {t['due_date']})" for t in overdue_tasks[:5]]) or '  None'}
+
+IN PROGRESS:
+{chr(10).join([f"  • {t['title']}" for t in in_progress[:5]]) or '  None'}
+
+MILESTONES:
+{chr(10).join([f"  • {m['title']} - {m['status']} (target: {m['target_date']})" for m in milestones]) or '  None'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+            except Exception as e:
+                logger.warning(f"Failed to load project context for stream: {e}")
+                project_context = ""
+
         rag_context = ""
         if project_id and organization_id:
             rag_context = await self.get_rag_context(
                 user_message, project_id, organization_id
             )
 
-        parts: list[str] = [
-            "You are an AI assistant helping with project management. "
-            "Be concise, practical, and helpful.",
-        ]
+        system_prompt = f"""You are an AI assistant for ProjectForge, a project management platform.
+{project_context}
+Be concise, practical, and helpful. When asked about tasks, milestones, or project status, \
+use the PROJECT CONTEXT above to give accurate answers.
+"""
+        parts: list[str] = [system_prompt]
 
         if rag_context:
             parts.append(
