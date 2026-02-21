@@ -128,10 +128,13 @@ export function ChatPanel({ projectId }: ChatPanelProps) {
             <p className="text-xs text-slate-400 text-center py-4">No conversations yet</p>
           ) : (
             sessions.map((session) => (
-              <button
+              <div
                 key={session.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setActiveSessionId(session.id)}
-                className={`w-full text-left rounded-md px-3 py-2 text-xs group flex items-center justify-between gap-1 transition-colors ${
+                onKeyDown={(e) => e.key === 'Enter' && setActiveSessionId(session.id)}
+                className={`w-full text-left rounded-md px-3 py-2 text-xs group flex items-center justify-between gap-1 transition-colors cursor-pointer ${
                   activeSessionId === session.id
                     ? 'bg-blue-100 text-blue-800 font-medium'
                     : 'text-slate-600 hover:bg-slate-200'
@@ -148,7 +151,7 @@ export function ChatPanel({ projectId }: ChatPanelProps) {
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
-              </button>
+              </div>
             ))
           )}
         </div>
