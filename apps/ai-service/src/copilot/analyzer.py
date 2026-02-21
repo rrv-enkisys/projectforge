@@ -3,7 +3,7 @@ from __future__ import annotations
 """Project analysis utilities"""
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -37,10 +37,17 @@ class ProjectAnalyzer:
                 issues.append("Low task completion rate")
 
         # Analyze overdue items
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
+        now_naive = now.replace(tzinfo=None)
+
+        def parse_date(s: str) -> datetime:
+            """Parse ISO date string; returns naive datetime for comparison."""
+            dt = datetime.fromisoformat(s)
+            return dt.replace(tzinfo=None) if dt.tzinfo else dt
+
         overdue_tasks = [
             t for t in tasks
-            if t.get("due_date") and datetime.fromisoformat(t["due_date"]) < now
+            if t.get("due_date") and parse_date(t["due_date"]) < now_naive
             and t.get("status") not in ("done", "completed")
         ]
 
@@ -52,7 +59,7 @@ class ProjectAnalyzer:
         milestones = project_data.get("milestones", [])
         overdue_milestones = [
             m for m in milestones
-            if m.get("target_date") and datetime.fromisoformat(m["target_date"]) < now
+            if m.get("target_date") and parse_date(m["target_date"]) < now_naive
             and not m.get("is_completed")
         ]
 
@@ -94,12 +101,17 @@ class ProjectAnalyzer:
 
         tasks = project_data.get("tasks", [])
         milestones = project_data.get("milestones", [])
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
+        now_naive = now.replace(tzinfo=None)
+
+        def parse_date(s: str) -> datetime:
+            dt = datetime.fromisoformat(s)
+            return dt.replace(tzinfo=None) if dt.tzinfo else dt
 
         # Risk: Too many overdue tasks
         overdue_count = sum(
             1 for t in tasks
-            if t.get("due_date") and datetime.fromisoformat(t["due_date"]) < now
+            if t.get("due_date") and parse_date(t["due_date"]) < now_naive
             and t.get("status") not in ("done", "completed")
         )
 
@@ -115,12 +127,12 @@ class ProjectAnalyzer:
         # Risk: No recent activity
         if tasks:
             latest_task_update = max(
-                (datetime.fromisoformat(t["updated_at"]) for t in tasks if "updated_at" in t),
+                (parse_date(t["updated_at"]) for t in tasks if t.get("updated_at")),
                 default=None
             )
 
             if latest_task_update:
-                days_since_update = (now - latest_task_update).days
+                days_since_update = (now_naive - latest_task_update).days
                 if days_since_update > 7:
                     risks.append({
                         "type": "low_activity",
@@ -133,8 +145,8 @@ class ProjectAnalyzer:
         # Risk: Milestone approaching without completion
         for milestone in milestones:
             if milestone.get("target_date") and not milestone.get("is_completed"):
-                target = datetime.fromisoformat(milestone["target_date"])
-                days_until = (target - now).days
+                target = parse_date(milestone["target_date"])
+                days_until = (target - now_naive).days
 
                 if 0 < days_until <= 7:
                     risks.append({
@@ -199,7 +211,7 @@ class ProjectAnalyzer:
         avg_days_per_task = 3  # Placeholder
 
         estimated_days = remaining_tasks * avg_days_per_task
-        predicted_date = datetime.utcnow().replace(microsecond=0)
+        predicted_date = datetime.now(timezone.utc).replace(microsecond=0)
 
         from datetime import timedelta
         predicted_date += timedelta(days=estimated_days)

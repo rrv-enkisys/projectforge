@@ -83,7 +83,7 @@ class ProjectDataRepository:
                     """
                     SELECT id, title, description, status, priority,
                            due_date, start_date, estimated_hours, actual_hours,
-                           assignee_id, updated_at, created_at
+                           updated_at, created_at
                     FROM tasks
                     WHERE project_id = :project_id
                       AND organization_id = :org_id
@@ -104,7 +104,6 @@ class ProjectDataRepository:
                     "start_date": r["start_date"].isoformat() if r.get("start_date") else None,
                     "estimated_hours": float(r["estimated_hours"]) if r.get("estimated_hours") else None,
                     "actual_hours": float(r["actual_hours"]) if r.get("actual_hours") else None,
-                    "assignee_id": str(r["assignee_id"]) if r.get("assignee_id") else None,
                     "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None,
                     "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
                 }

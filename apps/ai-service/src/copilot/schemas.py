@@ -21,6 +21,8 @@ class HealthAnalysis(BaseModel):
     score: int
     status: str
     issues: list[str]
+    total_tasks: int = 0
+    completed_tasks: int = 0
     task_completion_rate: float
     overdue_tasks_count: int
     overdue_milestones_count: int
