@@ -57,9 +57,7 @@ export function useUploadDocument() {
       formData.append('project_id', projectId)
       if (name) formData.append('name', name)
 
-      const response = await api.post<Document>('/api/v1/documents', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      const response = await api.post<Document>('/api/v1/documents', formData)
       return response.data
     },
     onSuccess: () => {
