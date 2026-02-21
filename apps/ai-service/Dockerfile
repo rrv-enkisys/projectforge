@@ -26,4 +26,4 @@ RUN poetry install --no-interaction --no-ansi
 
 EXPOSE 8082
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8082"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8082"]
