@@ -39,6 +39,7 @@ class ProjectDataRepository:
             "name": project["name"],
             "description": project.get("description"),
             "status": project.get("status"),
+            "client_name": project.get("client_name"),
             "start_date": project["start_date"].isoformat() if project.get("start_date") else None,
             "end_date": project["end_date"].isoformat() if project.get("end_date") else None,
             "budget": float(project["budget"]) if project.get("budget") else None,
@@ -57,10 +58,14 @@ class ProjectDataRepository:
             result = await self.db.execute(
                 text(
                     """
-                    SELECT id, name, description, status, start_date, end_date, budget
-                    FROM projects
-                    WHERE id = :project_id
-                      AND organization_id = :org_id
+                    SELECT
+                        p.id, p.name, p.description, p.status,
+                        p.start_date, p.end_date, p.budget,
+                        c.name AS client_name
+                    FROM projects p
+                    LEFT JOIN clients c ON p.client_id = c.id
+                    WHERE p.id = :project_id
+                      AND p.organization_id = :org_id
                 """
                 ),
                 {"project_id": str(project_id), "org_id": str(organization_id)},
@@ -81,13 +86,27 @@ class ProjectDataRepository:
             result = await self.db.execute(
                 text(
                     """
-                    SELECT id, title, description, status, priority,
-                           due_date, start_date, estimated_hours, actual_hours,
-                           updated_at, created_at
-                    FROM tasks
-                    WHERE project_id = :project_id
-                      AND organization_id = :org_id
-                    ORDER BY created_at DESC
+                    SELECT
+                        t.id, t.title, t.description, t.status, t.priority,
+                        t.start_date, t.due_date, t.estimated_hours, t.actual_hours,
+                        t.updated_at, t.created_at,
+                        COALESCE(
+                            json_agg(
+                                json_build_object(
+                                    'user_id', u.id,
+                                    'name', u.name,
+                                    'email', u.email
+                                )
+                            ) FILTER (WHERE u.id IS NOT NULL),
+                            '[]'
+                        ) AS assignees
+                    FROM tasks t
+                    LEFT JOIN task_assignments ta ON t.id = ta.task_id
+                    LEFT JOIN users u ON ta.user_id = u.id
+                    WHERE t.project_id = :project_id
+                      AND t.organization_id = :org_id
+                    GROUP BY t.id
+                    ORDER BY t.due_date ASC NULLS LAST
                 """
                 ),
                 {"project_id": str(project_id), "org_id": str(organization_id)},
@@ -106,6 +125,7 @@ class ProjectDataRepository:
                     "actual_hours": float(r["actual_hours"]) if r.get("actual_hours") else None,
                     "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None,
                     "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+                    "assignees": r["assignees"] if isinstance(r["assignees"], list) else [],
                 }
                 for r in rows
             ]
