@@ -102,23 +102,23 @@ jobs:
             --platform managed \
             --quiet
 
-      - name: Verify health
+      - name: Verify deployment is Ready
         run: |
-          SERVICE_URL=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
-            --region ${{ env.REGION }} \
-            --project ${{ env.PROJECT_ID }} \
-            --format 'value(status.url)')
-          echo "Checking: $SERVICE_URL/health"
-          for i in {1..5}; do
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "Health check passed"
+          # Services are not publicly accessible (traffic goes through Load Balancer only).
+          # Use the Cloud Run API to verify the revision is Ready instead of curl.
+          for i in {1..6}; do
+            READY=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
+              --region ${{ env.REGION }} \
+              --project ${{ env.PROJECT_ID }} \
+              --format 'value(status.conditions[?type="Ready"].status)')
+            if [ "$READY" = "True" ]; then
+              echo "${{ matrix.service.cloud_run_name }} is Ready"
               exit 0
             fi
-            echo "Attempt $i: HTTP $STATUS — retrying in 10s..."
+            echo "Attempt $i: status=$READY — retrying in 10s..."
             sleep 10
           done
-          echo "Health check failed after 5 attempts"
+          echo "Service did not reach Ready state"
           exit 1
 
   # ─── NOTIFY ────────────────────────────────────────────────────────────────

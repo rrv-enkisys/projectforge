@@ -125,31 +125,33 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Get staging URLs
-        id: urls
+      - name: Verify all staging services are Ready
         run: |
-          GATEWAY_URL=$(gcloud run services describe api-gateway-staging \
-            --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
-            --format 'value(status.url)')
-          echo "gateway_url=$GATEWAY_URL" >> $GITHUB_OUTPUT
+          # Services are not publicly accessible — verify via Cloud Run API.
+          for svc in api-gateway-staging core-service-staging ai-service-staging notification-service-staging; do
+            echo -n "Checking $svc... "
+            for i in {1..6}; do
+              READY=$(gcloud run services describe "$svc" \
+                --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
+                --format 'value(status.conditions[?type="Ready"].status)')
+              if [ "$READY" = "True" ]; then
+                echo "Ready"
+                break
+              fi
+              [ "$i" -eq 6 ] && { echo "FAILED (not Ready after 60s)"; exit 1; }
+              echo -n "."
+              sleep 10
+            done
+          done
 
-          CORE_URL=$(gcloud run services describe core-service-staging \
-            --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
-            --format 'value(status.url)')
-          echo "core_url=$CORE_URL" >> $GITHUB_OUTPUT
-
-          AI_URL=$(gcloud run services describe ai-service-staging \
-            --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
-            --format 'value(status.url)')
-          echo "ai_url=$AI_URL" >> $GITHUB_OUTPUT
-
-      - name: Health checks
+      - name: Smoke test via Load Balancer
         run: |
+          # The Load Balancer (staging.projectforge.app) is the only public entrypoint.
           check() {
-            local url=$1
-            local endpoint=$2
-            local expected=$3
-            local status=$(curl -sf -o /dev/null -w "%{http_code}" "${url}${endpoint}" || echo "000")
+            local endpoint=$1
+            local expected=$2
+            local status=$(curl -sf -o /dev/null -w "%{http_code}" \
+              "https://staging.projectforge.app${endpoint}" || echo "000")
             if [ "$status" = "$expected" ]; then
               echo "  PASS ${endpoint} -> ${status}"
             else
@@ -157,20 +159,11 @@ jobs:
               exit 1
             fi
           }
-
-          BASE="${{ steps.urls.outputs.gateway_url }}"
-          echo "=== API Gateway ==="
-          check "$BASE" "/health" "200"
-          # Authenticated routes must return 401 without a token
-          check "$BASE" "/api/v1/projects" "401"
-          check "$BASE" "/api/v1/tasks" "401"
-
-          echo "=== Core Service ==="
-          check "${{ steps.urls.outputs.core_url }}" "/health" "200"
-
-          echo "=== AI Service ==="
-          check "${{ steps.urls.outputs.ai_url }}" "/health" "200"
-
+          # API gateway health (via LB)
+          check "/health" "200"
+          # Authenticated routes must return 401 without token
+          check "/api/v1/projects" "401"
+          check "/api/v1/tasks" "401"
           echo "All smoke tests passed"
 
   # ─── MANUAL APPROVAL + PROD DEPLOY ─────────────────────────────────────────
@@ -221,17 +214,15 @@ jobs:
             --tag ${{ env.IMAGE_TAG }} \
             --quiet
 
-          # Health-check the new revision before shifting traffic
-          SERVICE_URL=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
-            --region ${{ env.REGION }} \
-            --project ${{ env.PROJECT_ID }} \
-            --format 'value(status.url)')
-
-          STATUS="000"
-          for i in {1..5}; do
-            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" "$SERVICE_URL/health" || echo "000")
-            if [ "$STATUS" = "200" ]; then
-              echo "Health check passed — routing 100% traffic to new revision"
+          # Verify new revision is Ready via Cloud Run API before shifting traffic
+          READY="False"
+          for i in {1..6}; do
+            READY=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
+              --region ${{ env.REGION }} \
+              --project ${{ env.PROJECT_ID }} \
+              --format 'value(status.conditions[?type="Ready"].status)')
+            if [ "$READY" = "True" ]; then
+              echo "Revision is Ready — routing 100% traffic to new revision"
               gcloud run services update-traffic ${{ matrix.service.cloud_run_name }} \
                 --to-latest \
                 --region ${{ env.REGION }} \
@@ -239,12 +230,12 @@ jobs:
                 --quiet
               break
             fi
-            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
+            echo "Attempt $i: Ready=$READY — retrying in 15s..."
             sleep 15
           done
 
-          if [ "$STATUS" != "200" ]; then
-            echo "Health check failed — keeping previous revision in traffic"
+          if [ "$READY" != "True" ]; then
+            echo "Revision did not become Ready — keeping previous revision in traffic"
             exit 1
           fi
 
