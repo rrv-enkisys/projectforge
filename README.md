@@ -197,6 +197,53 @@ See [Deployment Guide](./docs/deployment.md) for detailed instructions.
 
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
 
+## 🔐 CI/CD — GitHub Secrets Required
+
+Configure these secrets in **Settings → Secrets and variables → Actions** before the workflows will run:
+
+| Secret | Description | Required by |
+|--------|-------------|-------------|
+| `GCP_PROJECT_ID` | GCP project ID (`projectforge-4314f`) | `deploy-dev`, `deploy-prod` |
+| `GCP_SA_KEY` | Service Account JSON key with roles: `roles/run.admin`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser`, `roles/storage.admin` | `deploy-dev`, `deploy-prod` |
+| `SLACK_BOT_TOKEN` | Slack bot OAuth token for deploy notifications (optional) | `deploy-dev`, `deploy-prod` |
+
+### GitHub Environments (manual setup)
+
+Create three environments in **Settings → Environments**:
+
+| Environment | Protection rules | URL |
+|-------------|-----------------|-----|
+| `dev` | None (auto-deploy on push to main) | `https://dev.projectforge.app` |
+| `staging` | None (auto-deploy on release) | `https://staging.projectforge.app` |
+| `production` | **Required reviewers** — add at least one reviewer | `https://app.projectforge.app` |
+
+The `production` environment's **Required Reviewers** gate is what enforces manual approval before prod deploy.
+
+### Generating the GCP Service Account Key
+
+```bash
+# Create a dedicated SA for GitHub Actions (if not using Workload Identity)
+gcloud iam service-accounts create sa-github-actions \
+  --display-name "GitHub Actions CI/CD" \
+  --project projectforge-4314f
+
+# Grant required roles
+for role in roles/run.admin roles/artifactregistry.writer \
+            roles/iam.serviceAccountUser roles/storage.admin; do
+  gcloud projects add-iam-policy-binding projectforge-4314f \
+    --member "serviceAccount:sa-github-actions@projectforge-4314f.iam.gserviceaccount.com" \
+    --role "$role"
+done
+
+# Download the key (add to GitHub secret GCP_SA_KEY)
+gcloud iam service-accounts keys create /tmp/sa-github-actions.json \
+  --iam-account sa-github-actions@projectforge-4314f.iam.gserviceaccount.com
+cat /tmp/sa-github-actions.json
+rm /tmp/sa-github-actions.json
+```
+
+> **Security note**: Workload Identity Federation (WIF) is the recommended alternative — it avoids long-lived JSON keys. The workflows have `id-token: write` permission ready for a future WIF migration.
+
 ## 📄 License
 
 This project is proprietary software. All rights reserved.
