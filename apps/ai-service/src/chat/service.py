@@ -294,12 +294,19 @@ use the PROJECT CONTEXT above to give accurate answers.
                 max_output_tokens=1024,
             )
         except Exception as e:
+            err_str = str(e)
             logger.warning(f"Vertex AI unavailable, using fallback response: {e}")
-            response = (
-                "⚠️ AI service is running in development mode without Vertex AI credentials. "
-                "To enable real AI responses, configure GCP credentials with Vertex AI access.\n\n"
-                f"Your message was: *{user_message}*"
-            )
+            if "429" in err_str or "Resource exhausted" in err_str or "quota" in err_str.lower():
+                response = (
+                    "⏳ El servicio de IA está temporalmente saturado (límite de cuota de Gemini alcanzado). "
+                    "Por favor espera unos segundos y vuelve a intentarlo."
+                )
+            else:
+                response = (
+                    "⚠️ El servicio de IA no está disponible en este momento. "
+                    "Por favor intenta de nuevo en unos momentos.\n\n"
+                    f"Tu mensaje fue: *{user_message}*"
+                )
 
         # Store user message and assistant response
         await self.add_message(session_id, "user", user_message)
