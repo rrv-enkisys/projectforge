@@ -97,6 +97,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy ${{ matrix.service.name }} to Staging
+        # gcloud run deploy waits for the revision to be Ready before returning.
         run: |
           gcloud run deploy ${{ matrix.service.cloud_run_name }} \
             --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ matrix.service.name }}:${{ env.IMAGE_TAG }} \
@@ -110,43 +111,12 @@ jobs:
     name: Smoke Tests (Staging)
     runs-on: ubuntu-latest
     needs: deploy-staging
-    permissions:
-      contents: read
-      id-token: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Verify all staging services are Ready
-        run: |
-          # Services are not publicly accessible — verify via Cloud Run API.
-          for svc in api-gateway-staging core-service-staging ai-service-staging notification-service-staging; do
-            echo -n "Checking $svc... "
-            for i in {1..6}; do
-              READY=$(gcloud run services describe "$svc" \
-                --region ${{ env.REGION }} --project ${{ env.PROJECT_ID }} \
-                --format 'value(status.conditions[?type="Ready"].status)')
-              if [ "$READY" = "True" ]; then
-                echo "Ready"
-                break
-              fi
-              [ "$i" -eq 6 ] && { echo "FAILED (not Ready after 60s)"; exit 1; }
-              echo -n "."
-              sleep 10
-            done
-          done
-
       - name: Smoke test via Load Balancer
+        # Staging traffic goes through the Load Balancer only (staging.projectforge.app).
+        # gcloud run deploy already guarantees revisions are Ready, so we just
+        # validate the LB routes are responding correctly.
         run: |
-          # The Load Balancer (staging.projectforge.app) is the only public entrypoint.
           check() {
             local endpoint=$1
             local expected=$2
@@ -159,9 +129,8 @@ jobs:
               exit 1
             fi
           }
-          # API gateway health (via LB)
           check "/health" "200"
-          # Authenticated routes must return 401 without token
+          # Authenticated routes must return 401 without a token
           check "/api/v1/projects" "401"
           check "/api/v1/tasks" "401"
           echo "All smoke tests passed"
@@ -214,30 +183,15 @@ jobs:
             --tag ${{ env.IMAGE_TAG }} \
             --quiet
 
-          # Verify new revision is Ready via Cloud Run API before shifting traffic
-          READY="False"
-          for i in {1..6}; do
-            READY=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
-              --region ${{ env.REGION }} \
-              --project ${{ env.PROJECT_ID }} \
-              --format 'value(status.conditions[?type="Ready"].status)')
-            if [ "$READY" = "True" ]; then
-              echo "Revision is Ready — routing 100% traffic to new revision"
-              gcloud run services update-traffic ${{ matrix.service.cloud_run_name }} \
-                --to-latest \
-                --region ${{ env.REGION }} \
-                --project ${{ env.PROJECT_ID }} \
-                --quiet
-              break
-            fi
-            echo "Attempt $i: Ready=$READY — retrying in 15s..."
-            sleep 15
-          done
-
-          if [ "$READY" != "True" ]; then
-            echo "Revision did not become Ready — keeping previous revision in traffic"
-            exit 1
-          fi
+          # gcloud run deploy --no-traffic waits for the revision to pass startup
+          # probes before returning. If it exits 0, the revision is healthy.
+          # Now shift 100% traffic to it.
+          echo "Revision is healthy — routing 100% traffic to new revision"
+          gcloud run services update-traffic ${{ matrix.service.cloud_run_name }} \
+            --to-latest \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --quiet
 
   # ─── NOTIFY ────────────────────────────────────────────────────────────────
   notify:

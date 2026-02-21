@@ -94,6 +94,9 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy ${{ matrix.service.name }}
+        # gcloud run deploy waits for the new revision to be Ready before returning.
+        # It exits non-zero if the revision fails startup probes, so no separate
+        # health check step is needed.
         run: |
           gcloud run deploy ${{ matrix.service.cloud_run_name }} \
             --image ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ matrix.service.name }}:${{ env.IMAGE_TAG }} \
@@ -101,25 +104,6 @@ jobs:
             --project ${{ env.PROJECT_ID }} \
             --platform managed \
             --quiet
-
-      - name: Verify deployment is Ready
-        run: |
-          # Services are not publicly accessible (traffic goes through Load Balancer only).
-          # Use the Cloud Run API to verify the revision is Ready instead of curl.
-          for i in {1..6}; do
-            READY=$(gcloud run services describe ${{ matrix.service.cloud_run_name }} \
-              --region ${{ env.REGION }} \
-              --project ${{ env.PROJECT_ID }} \
-              --format 'value(status.conditions[?type="Ready"].status)')
-            if [ "$READY" = "True" ]; then
-              echo "${{ matrix.service.cloud_run_name }} is Ready"
-              exit 0
-            fi
-            echo "Attempt $i: status=$READY — retrying in 10s..."
-            sleep 10
-          done
-          echo "Service did not reach Ready state"
-          exit 1
 
   # ─── NOTIFY ────────────────────────────────────────────────────────────────
   notify:
