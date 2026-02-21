@@ -68,10 +68,13 @@ class ProjectAnalyzer:
         else:
             status = "critical"
 
+        completed_count = len([t for t in tasks if t.get("status") in ("done", "completed")])
         return {
             "score": max(0, health_score),
             "status": status,
             "issues": issues,
+            "total_tasks": len(tasks),
+            "completed_tasks": completed_count,
             "task_completion_rate": completion_rate if tasks else 0,
             "overdue_tasks_count": len(overdue_tasks),
             "overdue_milestones_count": len(overdue_milestones)

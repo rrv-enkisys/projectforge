@@ -124,7 +124,7 @@ class ProjectDataRepository:
             result = await self.db.execute(
                 text(
                     """
-                    SELECT id, title, description, status, target_date, completed_at
+                    SELECT id, name, description, status, target_date
                     FROM milestones
                     WHERE project_id = :project_id
                       AND organization_id = :org_id
@@ -137,12 +137,11 @@ class ProjectDataRepository:
             return [
                 {
                     "id": str(r["id"]),
-                    "title": r["title"],
+                    "title": r["name"],
                     "description": r.get("description"),
                     "status": r["status"],
                     "target_date": r["target_date"].isoformat() if r.get("target_date") else None,
                     "is_completed": r["status"] == "completed",
-                    "completed_at": r["completed_at"].isoformat() if r.get("completed_at") else None,
                 }
                 for r in rows
             ]

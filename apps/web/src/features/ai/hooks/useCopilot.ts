@@ -35,6 +35,8 @@ interface RawProjectAnalysis {
     score: number
     status: 'healthy' | 'at_risk' | 'critical' | 'unknown'
     issues: string[]
+    total_tasks: number
+    completed_tasks: number
     task_completion_rate: number
     overdue_tasks_count: number
     overdue_milestones_count: number
@@ -81,8 +83,8 @@ function transformAnalysis(raw: RawProjectAnalysis): ProjectAnalysis {
       delay_days: Math.max(0, cp.estimated_days_remaining ?? 0),
     },
     metrics: {
-      total_tasks: 0,
-      completed_tasks: 0,
+      total_tasks: raw.health.total_tasks ?? 0,
+      completed_tasks: raw.health.completed_tasks ?? 0,
       overdue_tasks: raw.health.overdue_tasks_count ?? 0,
       completion_rate: raw.health.task_completion_rate ?? 0,
       total_milestones: 0,

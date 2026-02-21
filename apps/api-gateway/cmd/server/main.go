@@ -122,6 +122,9 @@ func main() {
 		r.HandleFunc("/copilot", proxyHandler.ProxyToAI())
 		r.HandleFunc("/copilot/*", proxyHandler.ProxyToAI())
 
+		r.HandleFunc("/rag", proxyHandler.ProxyToAI())
+		r.HandleFunc("/rag/*", proxyHandler.ProxyToAI())
+
 		// Notification Service routes
 		r.HandleFunc("/notifications", proxyHandler.ProxyToNotification())
 		r.HandleFunc("/notifications/*", proxyHandler.ProxyToNotification())
