@@ -17,6 +17,7 @@ import { KanbanBoard } from '@/features/tasks/components/KanbanBoard'
 import { GanttWrapper } from '@/features/projects/components/GanttWrapper'
 import { CopilotPanel } from '@/features/ai/components/CopilotPanel'
 import { ChatPanel } from '@/features/ai/components/ChatPanel'
+import { DocumentQAPanel } from '@/features/ai/components/DocumentQAPanel'
 import { cn } from '@/lib/utils'
 import type { Task } from '@/features/tasks/hooks/useTasks'
 import type { Document } from '@/features/documents/hooks/useDocuments'
@@ -349,79 +350,85 @@ export default function ProjectDetailPage() {
 
           {/* Documents */}
           {activeTab === 'documents' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-500">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
-                <Button onClick={() => fileInputRef.current?.click()} disabled={uploadDocument.isPending}>
-                  {uploadDocument.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="mr-2 h-4 w-4" />
-                  )}
-                  Upload
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.doc,.docx,.txt,.md"
-                  onChange={handleFileChange}
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Upload + List */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
+                  <Button onClick={() => fileInputRef.current?.click()} disabled={uploadDocument.isPending}>
+                    {uploadDocument.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    Upload
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.txt,.md"
+                    onChange={handleFileChange}
+                  />
+                </div>
+
+                {documents.length === 0 ? (
+                  <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-slate-200 py-12 text-center gap-4">
+                    <FileText className="h-10 w-10 text-slate-300" />
+                    <div>
+                      <p className="font-medium text-slate-700">No documents yet</p>
+                      <p className="text-sm text-slate-500 mt-1">Upload files to enable AI Q&A on this project</p>
+                    </div>
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload document
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {documents.map((doc) => (
+                      <Card key={doc.id} className="group hover:shadow-sm transition-shadow">
+                        <CardContent className="py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-900 truncate">{doc.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {docStatusIcon[doc.status]}
+                                <span className="text-xs text-slate-500">{formatBytes(doc.file_size)}</span>
+                                {doc.status === 'processed' && (
+                                  <span className="text-xs text-green-600">· indexed</span>
+                                )}
+                                {doc.error_message && (
+                                  <span className="text-xs text-red-500 truncate max-w-[160px]" title={doc.error_message}>· {doc.error_message}</span>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                              onClick={() => handleDeleteDoc(doc.id, doc.name)}
+                              disabled={deletingDocId === doc.id}
+                            >
+                              {deletingDocId === doc.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {documents.length === 0 ? (
-                <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-slate-200 py-12 text-center gap-4">
-                  <FileText className="h-10 w-10 text-slate-300" />
-                  <div>
-                    <p className="font-medium text-slate-700">No documents yet</p>
-                    <p className="text-sm text-slate-500 mt-1">Upload files to enable AI Q&A on this project</p>
-                  </div>
-                  <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload document
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {documents.map((doc) => (
-                    <Card key={doc.id} className="group hover:shadow-sm transition-shadow">
-                      <CardContent className="py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                            <FileText className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-slate-900 truncate">{doc.name}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {docStatusIcon[doc.status]}
-                              <span className="text-xs text-slate-500">{formatBytes(doc.file_size)}</span>
-                              {doc.status === 'processed' && (
-                                <span className="text-xs text-green-600">· indexed</span>
-                              )}
-                              {doc.error_message && (
-                                <span className="text-xs text-red-500 truncate max-w-[160px]" title={doc.error_message}>· {doc.error_message}</span>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
-                            onClick={() => handleDeleteDoc(doc.id, doc.name)}
-                            disabled={deletingDocId === doc.id}
-                          >
-                            {deletingDocId === doc.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              {/* Right: Document Q&A */}
+              <DocumentQAPanel projectId={id!} />
             </div>
           )}
 
