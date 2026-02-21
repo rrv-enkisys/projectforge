@@ -14,19 +14,21 @@ type Client struct {
 	authClient *auth.Client
 }
 
-// NewClient initializes a new Firebase client
-func NewClient(ctx context.Context, projectID, credentialsPath string) (*Client, error) {
+// NewClient initializes a new Firebase client.
+// credentialsJSON should be the raw JSON content of a service account key,
+// or empty string to use Application Default Credentials (recommended on Cloud Run).
+func NewClient(ctx context.Context, projectID, credentialsJSON string) (*Client, error) {
 	var app *firebase.App
 	var err error
 
-	if credentialsPath != "" {
-		// Use credentials file if provided
-		opt := option.WithCredentialsFile(credentialsPath)
-		config := &firebase.Config{ProjectID: projectID}
+	config := &firebase.Config{ProjectID: projectID}
+
+	// Use explicit credentials JSON only when it contains actual content (more than just '{}')
+	if len(credentialsJSON) > 2 && credentialsJSON[0] == '{' {
+		opt := option.WithCredentialsJSON([]byte(credentialsJSON))
 		app, err = firebase.NewApp(ctx, config, opt)
 	} else {
-		// Use default credentials (for GCP environments)
-		config := &firebase.Config{ProjectID: projectID}
+		// Use Application Default Credentials (works on Cloud Run with proper service account)
 		app, err = firebase.NewApp(ctx, config)
 	}
 
