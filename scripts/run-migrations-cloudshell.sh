@@ -37,7 +37,9 @@ echo "✓ Password obtenida desde Secret Manager"
 if ! command -v migrate &>/dev/null; then
   echo "Instalando golang-migrate..."
   curl -sL https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz \
-    | tar -xz -C /usr/local/bin
+    | tar -xz -C /tmp migrate
+  chmod +x /tmp/migrate
+  export PATH="/tmp:$PATH"
   echo "✓ golang-migrate instalado: $(migrate --version)"
 fi
 
