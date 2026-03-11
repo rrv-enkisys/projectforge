@@ -167,7 +167,7 @@ export default function TasksPage() {
 
         {/* Meeting Notes Dialog */}
         <Dialog open={isMeetingDialogOpen} onOpenChange={setIsMeetingDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>Extract Tasks from Meeting Notes</DialogTitle>
             </DialogHeader>
