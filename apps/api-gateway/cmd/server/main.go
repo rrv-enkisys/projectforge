@@ -125,6 +125,9 @@ func main() {
 		r.HandleFunc("/rag", proxyHandler.ProxyToAI())
 		r.HandleFunc("/rag/*", proxyHandler.ProxyToAI())
 
+		r.HandleFunc("/agents", proxyHandler.ProxyToAI())
+		r.HandleFunc("/agents/*", proxyHandler.ProxyToAI())
+
 		// Notification Service routes
 		r.HandleFunc("/notifications", proxyHandler.ProxyToNotification())
 		r.HandleFunc("/notifications/*", proxyHandler.ProxyToNotification())

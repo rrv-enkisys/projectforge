@@ -14,6 +14,8 @@ from .config import settings
 from .database import close_db, init_db
 
 # Import routers
+from .agents.meeting_notes.router import router as meeting_notes_router
+from .agents.sow_parser.router import router as sow_parser_router
 from .chat.router import router as chat_router
 from .copilot.router import router as copilot_router
 from .documents.router import router as documents_router
@@ -102,6 +104,8 @@ app.include_router(documents_router, prefix=settings.api_prefix)
 app.include_router(rag_router, prefix=settings.api_prefix)
 app.include_router(chat_router, prefix=settings.api_prefix)
 app.include_router(copilot_router, prefix=settings.api_prefix)
+app.include_router(sow_parser_router, prefix=settings.api_prefix)
+app.include_router(meeting_notes_router, prefix=settings.api_prefix)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,12 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11,7 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useTasks, useDeleteTask, type Task } from '@/features/tasks/hooks/useTasks'
 import { TaskFormDialog } from '@/features/tasks/components/TaskFormDialog'
-import { Calendar, Flag, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { MeetingNotesUploader } from '@/features/tasks/components/MeetingNotesUploader'
+import { Calendar, Flag, MoreVertical, Pencil, Plus, Trash2, FileText } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
   todo: 'bg-blue-100 text-blue-700',
@@ -114,6 +121,7 @@ export default function TasksPage() {
   const { data, isLoading, error } = useTasks()
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isMeetingDialogOpen, setIsMeetingDialogOpen] = useState(false)
 
   const handleEdit = (task: Task) => {
     setEditingTask(task)
@@ -134,22 +142,38 @@ export default function TasksPage() {
             <h1 className="text-3xl font-bold text-slate-900">Tasks</h1>
             <p className="mt-2 text-sm text-slate-600">Track and manage all your tasks across projects</p>
           </div>
-          <TaskFormDialog
-            task={editingTask || undefined}
-            open={isDialogOpen}
-            onOpenChange={(open) => {
-              setIsDialogOpen(open)
-              if (!open) setEditingTask(null)
-            }}
-            onSuccess={handleDialogClose}
-            trigger={
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Task
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsMeetingDialogOpen(true)}>
+              <FileText className="mr-2 h-4 w-4" />
+              From Meeting Notes
+            </Button>
+            <TaskFormDialog
+              task={editingTask || undefined}
+              open={isDialogOpen}
+              onOpenChange={(open) => {
+                setIsDialogOpen(open)
+                if (!open) setEditingTask(null)
+              }}
+              onSuccess={handleDialogClose}
+              trigger={
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Task
+                </Button>
+              }
+            />
+          </div>
         </div>
+
+        {/* Meeting Notes Dialog */}
+        <Dialog open={isMeetingDialogOpen} onOpenChange={setIsMeetingDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Extract Tasks from Meeting Notes</DialogTitle>
+            </DialogHeader>
+            <MeetingNotesUploader onDone={() => setIsMeetingDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
 
         {/* Tasks list */}
         {isLoading ? (
